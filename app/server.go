@@ -9,6 +9,8 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/pkg/parser"
 )
 
+var RedisMap map[string]string
+
 func main() {
 	// You can use print statements as follows for debugging, they'll be visible when running tests.
 	fmt.Println("Logs from your program will appear here!")
@@ -38,16 +40,40 @@ func handleClient(conn net.Conn) {
 			break
 		}
 		fmt.Printf("Recieved Bytes in request: %d\n", recievedBytes)
-		parsedMessage := parser.Parse(buffer[:recievedBytes])
+		parsedMessage, _ := parser.Decode(buffer[:recievedBytes])
 		var response string
 		switch parsedMessage.Method {
 		case "ping":
 			response = "+PONG\r\n"
 			fmt.Printf("Response is %s ", response)
 		case "echo":
-			response = fmt.Sprintf("$%d\r\n%s\r\n", parsedMessage.MessageLength, parsedMessage.Message)
+			response = fmt.Sprintf("$%d\r\n%s\r\n", len(parsedMessage.Messages[0]), parsedMessage.Messages)
+			fmt.Printf("Response is %s ", response)
+
+		case "set":
+			if parsedMessage.MessagesLength >= 2 {
+				key := parsedMessage.Messages[0]
+				value := parsedMessage.Messages[1]
+				RedisMap[key] = value
+				response = "+OK\r\n"
+			} else {
+				response = "$-1\r\n"
+			}
+			fmt.Printf("Response is %s ", response)
+		case "get":
+			if parsedMessage.MessagesLength >= 1 {
+				key := parsedMessage.Messages[0]
+				if value, ok := RedisMap[key]; !ok {
+					response = "$-1\r\n"
+				} else {
+					response = fmt.Sprintf("$%d\r\n%s\r\n", len(value), value)
+				}
+			} else {
+				response = ""
+			}
 			fmt.Printf("Response is %s ", response)
 		}
+
 		sentBytes, err := conn.Write([]byte(response))
 		if err != nil {
 			fmt.Println("Error writing response: ", err.Error())
