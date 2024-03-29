@@ -45,7 +45,7 @@ func handleClient(conn net.Conn) {
 			response = "+PONG\r\n"
 			fmt.Printf("Response is %s ", response)
 		case "echo":
-			response = fmt.Sprintf("%d\r\n%s\r\n", parsedMessage.MessageLength, parsedMessage.Message)
+			response = fmt.Sprintf("$%d\r\n%s\r\n", parsedMessage.MessageLength, parsedMessage.Message)
 			fmt.Printf("Response is %s ", response)
 		}
 		sentBytes, err := conn.Write([]byte(response))
