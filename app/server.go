@@ -28,7 +28,6 @@ func main() {
 		if err == io.EOF || recievedBytes == 0 {
 			break
 		}
-		fmt.Printf("Recieved Values in the buffer: %s\n", buffer[:recievedBytes])
 		sentBytes, err := conn.Write([]byte("+PONG\r\n"))
 		if err != nil {
 			fmt.Println("Error writing response: ", err.Error())
