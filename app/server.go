@@ -5,6 +5,8 @@ import (
 	"io"
 	"net"
 	"os"
+
+	"github.com/codecrafters-io/redis-starter-go/pkg/parser"
 )
 
 func main() {
@@ -31,12 +33,22 @@ func handleClient(conn net.Conn) {
 	defer conn.Close()
 	for {
 		buffer := make([]byte, 1024)
-		recieved, err := conn.Read(buffer)
-		if err == io.EOF || recieved == 0 {
+		recievedBytes, err := conn.Read(buffer)
+		if err == io.EOF || recievedBytes == 0 {
 			break
 		}
-		fmt.Printf("Recieved Values in the buffer: %s\n", string(buffer))
-		sentBytes, err := conn.Write([]byte("+PONG\r\n"))
+		fmt.Printf("Recieved Bytes in request: %d\n", recievedBytes)
+		parsedMessage := parser.Parse(buffer[:recievedBytes])
+		var response string
+		switch parsedMessage.Method {
+		case "ping":
+			response = "+PONG\r\n"
+			fmt.Printf("Response is %s ", response)
+		case "echo":
+			response = fmt.Sprintf("%d\r\n%s\r\n", parsedMessage.MessageLength, parsedMessage.Message)
+			fmt.Printf("Response is %s ", response)
+		}
+		sentBytes, err := conn.Write([]byte(response))
 		if err != nil {
 			fmt.Println("Error writing response: ", err.Error())
 			break
