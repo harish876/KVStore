@@ -24,11 +24,11 @@ func main() {
 	defer conn.Close()
 	for {
 		buffer := make([]byte, 1024)
-		recieved, err := conn.Read(buffer)
-		if err == io.EOF || recieved == 0 {
+		recievedBytes, err := conn.Read(buffer)
+		if err == io.EOF || recievedBytes == 0 {
 			break
 		}
-		fmt.Printf("Recieved Values in the buffer: %s\n", string(buffer))
+		fmt.Printf("Recieved Values in the buffer: %s\n", string(buffer[:recievedBytes]))
 		sentBytes, err := conn.Write([]byte("+PONG\r\n"))
 		if err != nil {
 			fmt.Println("Error writing response: ", err.Error())
