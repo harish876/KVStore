@@ -64,3 +64,15 @@ func TestParserSetExpiry(t *testing.T) {
 	}
 	fmt.Printf("\nMethod: %s\nMessage: %s\nMessage length: %d\nSegment Length: %d\n", msg.Method, msg.Messages, msg.MessagesLength, msg.SegmentLength)
 }
+
+func TestParserInfo(t *testing.T) {
+	requestMessage := []string{"info", "replication"}
+	responseMessage := parser.EncodeResponse([]string{"role:master"})
+	input := parser.EncodeRequest(requestMessage)
+	msg, err := parser.Decode([]byte(input))
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Printf("\nMethod: %s\nMessage: %s\nMessage length: %d\nSegment Length: %d\n", msg.Method, msg.Messages, msg.MessagesLength, msg.SegmentLength)
+	fmt.Printf("\nResponse Message is: %s", responseMessage)
+}

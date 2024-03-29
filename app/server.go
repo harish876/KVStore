@@ -45,10 +45,10 @@ func handleClient(conn net.Conn, s *store.Store) {
 		var response string
 		switch parsedMessage.Method {
 		case "ping":
-			response = parser.Encode([]string{"PONG"}, true)
+			response = parser.EncodeAck("PONG")
 			fmt.Printf("Response is %s ", response)
 		case "echo":
-			response = parser.Encode(parsedMessage.Messages, false)
+			response = parser.EncodeResponse(parsedMessage.Messages)
 			fmt.Printf("Response is %s ", response)
 
 		case "set":
@@ -56,13 +56,13 @@ func handleClient(conn net.Conn, s *store.Store) {
 				key := parsedMessage.Messages[0]
 				value := parsedMessage.Messages[1]
 				s.Set(key, value)
-				response = parser.Encode([]string{"OK"}, true)
+				response = parser.EncodeAck("OK")
 			} else if parsedMessage.MessagesLength == 4 {
 				key := parsedMessage.Messages[0]
 				value := parsedMessage.Messages[1]
 				ttl, _ := strconv.Atoi(parsedMessage.Messages[3])
 				s.SetWithTTL(key, value, ttl)
-				response = parser.Encode([]string{"OK"}, true)
+				response = parser.EncodeAck("OK")
 			} else {
 				response = parser.BULK_NULL_STRING
 			}
@@ -74,10 +74,18 @@ func handleClient(conn net.Conn, s *store.Store) {
 				if value, ok := s.Get(key); !ok {
 					response = parser.BULK_NULL_STRING
 				} else {
-					response = parser.Encode([]string{value}, false)
+					response = parser.EncodeResponse([]string{value})
 				}
 			} else {
-				response = ""
+				response = parser.BULK_NULL_STRING
+			}
+			fmt.Printf("Response is %s ", response)
+
+		case "info":
+			if parsedMessage.MessagesLength >= 1 {
+				response = parser.EncodeResponse([]string{"role:master"})
+			} else {
+				response = parser.BULK_NULL_STRING
 			}
 			fmt.Printf("Response is %s ", response)
 

@@ -75,13 +75,31 @@ func Decode(msg []byte) (RESPMessage, error) {
 	return parsedRespMessage, nil
 }
 
-// TODO: encode different for request and response
-func Encode(messages []string, isAck bool) string {
-	if isAck && len(messages) == 0 {
-		return fmt.Sprintf("+%s\r\n", messages[0])
-	} else if len(messages) > 0 {
-		return fmt.Sprintf("$%d\r\n%s\r\n", len(messages[0]), messages[0])
+func EncodeResponse(messages []string) string {
+	if len(messages) > 0 {
+		var result string
+		for _, msg := range messages {
+			result += fmt.Sprintf("$%d\r\n%s\r\n", len(msg), msg)
+		}
+		return result
 	} else {
 		return BULK_NULL_STRING
 	}
+}
+
+func EncodeRequest(messages []string) string {
+	if len(messages) > 0 {
+		var result string
+		result += fmt.Sprintf("*%d\r\n", len(messages))
+		for _, msg := range messages {
+			result += fmt.Sprintf("$%d\r\n%s\r\n", len(msg), msg)
+		}
+		return result
+	} else {
+		return BULK_NULL_STRING
+	}
+}
+
+func EncodeAck(msg string) string {
+	return fmt.Sprintf("+%s\r\n", msg)
 }
