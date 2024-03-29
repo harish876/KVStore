@@ -1,23 +1,22 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"io"
 	"net"
 	"os"
 	"strconv"
 
+	"github.com/codecrafters-io/redis-starter-go/pkg/args"
 	"github.com/codecrafters-io/redis-starter-go/pkg/parser"
 	"github.com/codecrafters-io/redis-starter-go/pkg/store"
 )
 
 func main() {
 	store := store.New()
-	portPtr := flag.Int("port", 6379, "Redis Server Port")
-	flag.Parse()
-	port := *portPtr
-	listener, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", port))
+	glbArgs := args.ParseArgs()
+	fmt.Println(glbArgs)
+	listener, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", glbArgs.ServerPort))
 	if err != nil {
 		fmt.Println("Failed to bind to port 6379")
 		os.Exit(1)
@@ -28,11 +27,11 @@ func main() {
 			fmt.Println("Error accepting connection: ", err.Error())
 			os.Exit(1)
 		}
-		go handleClient(conn, store)
+		go handleClient(conn, store, glbArgs)
 	}
 }
 
-func handleClient(conn net.Conn, s *store.Store) {
+func handleClient(conn net.Conn, s *store.Store, glb args.RedisArgs) {
 	defer conn.Close()
 	for {
 		buffer := make([]byte, 1024)
@@ -83,7 +82,7 @@ func handleClient(conn net.Conn, s *store.Store) {
 
 		case "info":
 			if parsedMessage.MessagesLength >= 1 {
-				response = parser.EncodeResponse([]string{"role:master"})
+				response = parser.EncodeResponse([]string{fmt.Sprintf("role:%s", glb.Role)})
 			} else {
 				response = parser.BULK_NULL_STRING
 			}
