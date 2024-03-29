@@ -80,6 +80,10 @@ func handleClient(conn net.Conn, s *store.Store) {
 				response = ""
 			}
 			fmt.Printf("Response is %s ", response)
+
+		default:
+			fmt.Printf("Buffer: %s\n", buffer[:recievedBytes])
+			fmt.Printf("Parsed Message: %s\n", parsedMessage.Messages)
 		}
 
 		sentBytes, err := conn.Write([]byte(response))
