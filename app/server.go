@@ -44,14 +44,10 @@ func handleClient(conn net.Conn) {
 		var response string
 		switch parsedMessage.Method {
 		case "ping":
-			response = "+PONG\r\n"
+			response = parser.Encode([]string{"PONG"}, true)
 			fmt.Printf("Response is %s ", response)
 		case "echo":
-			if parsedMessage.MessagesLength > 0 {
-				response = fmt.Sprintf("$%d\r\n%s\r\n", len(parsedMessage.Messages[0]), parsedMessage.Messages[0])
-			} else {
-				response = "$-1\r\n"
-			}
+			response = parser.Encode(parsedMessage.Messages, false)
 			fmt.Printf("Response is %s ", response)
 
 		case "set":
@@ -59,18 +55,19 @@ func handleClient(conn net.Conn) {
 				key := parsedMessage.Messages[0]
 				value := parsedMessage.Messages[1]
 				RedisMap[key] = value
-				response = "+OK\r\n"
+				response = parser.Encode([]string{"OK"}, true)
 			} else {
-				response = "$-1\r\n"
+				response = parser.BULK_NULL_STRING
 			}
 			fmt.Printf("Response is %s ", response)
+
 		case "get":
 			if parsedMessage.MessagesLength >= 1 {
 				key := parsedMessage.Messages[0]
 				if value, ok := RedisMap[key]; !ok {
 					response = "$-1\r\n"
 				} else {
-					response = fmt.Sprintf("$%d\r\n%s\r\n", len(value), value)
+					response = parser.Encode([]string{value}, false)
 				}
 			} else {
 				response = ""

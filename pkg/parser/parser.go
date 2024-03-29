@@ -6,6 +6,10 @@ import (
 	"strings"
 )
 
+var (
+	BULK_NULL_STRING = "$-1\r\n"
+)
+
 type RESPMessage struct {
 	Method         string
 	Messages       []string
@@ -71,7 +75,13 @@ func Decode(msg []byte) (RESPMessage, error) {
 	return parsedRespMessage, nil
 }
 
-// TODO: make a encode function to make life easier
-func Encode(msg RESPMessage) ([]byte, error) {
-	return nil, nil
+// TODO: encode different for request and response
+func Encode(messages []string, isAck bool) string {
+	if isAck && len(messages) == 0 {
+		return fmt.Sprintf("+%s\r\n", messages[0])
+	} else if len(messages) > 0 {
+		return fmt.Sprintf("$%d\r\n%s\r\n", len(messages[0]), messages[0])
+	} else {
+		return BULK_NULL_STRING
+	}
 }
