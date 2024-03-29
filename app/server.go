@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"os"
 )
@@ -21,5 +22,18 @@ func main() {
 		os.Exit(1)
 	}
 	defer conn.Close()
-	conn.Write([]byte("+PONG\r\n"))
+	for {
+		buffer := make([]byte, 1024)
+		recieved, err := conn.Read(buffer)
+		if err == io.EOF || recieved == 0 {
+			break
+		}
+		fmt.Printf("Recieved Values in the buffer: %s\n", string(buffer))
+		sentBytes, err := conn.Write([]byte("+PONG\r\n"))
+		if err != nil {
+			fmt.Println("Error writing response: ", err.Error())
+			break
+		}
+		fmt.Printf("Number of Bytes sent : %d\n", sentBytes)
+	}
 }
