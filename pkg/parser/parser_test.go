@@ -8,7 +8,7 @@ import (
 )
 
 func TestParserEcho(t *testing.T) {
-	input := []byte("*2\r\n$4\r\necho\r\n$3\r\nhey\r\n")
+	input := []byte("*2\r\n$4\r\necho\r\n$10\r\nstrawberry\r\n")
 	msg := parser.Parse(input)
 	fmt.Printf("Method: %s\nMessage: %s\nMessage length: %d\nMethod Length: %d\nSegment Length: %d\n", msg.Method, msg.Message, msg.MessageLength, msg.MethodLength, msg.SegmentLength)
 
