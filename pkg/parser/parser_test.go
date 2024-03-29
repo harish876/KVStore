@@ -55,3 +55,12 @@ func TestParserGet(t *testing.T) {
 	}
 	fmt.Printf("\nMethod: %s\nMessage: %s\nMessage length: %d\nSegment Length: %d\n", msg.Method, msg.Messages, msg.MessagesLength, msg.SegmentLength)
 }
+
+func TestParserSetExpiry(t *testing.T) {
+	input := []byte("*5\r\n$3\r\nset\r\n$4\r\nfoo\r\nbar\r\n$2\r\npx\r\n$2\r\n100\r\n")
+	msg, err := parser.Decode(input)
+	if err != nil {
+		t.Fatalf("Test Expiry %v", err)
+	}
+	fmt.Printf("\nMethod: %s\nMessage: %s\nMessage length: %d\nSegment Length: %d\n", msg.Method, msg.Messages, msg.MessagesLength, msg.SegmentLength)
+}

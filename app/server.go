@@ -5,6 +5,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"strconv"
 
 	"github.com/codecrafters-io/redis-starter-go/pkg/parser"
 	"github.com/codecrafters-io/redis-starter-go/pkg/store"
@@ -47,10 +48,16 @@ func handleClient(conn net.Conn, s *store.Store) {
 			fmt.Printf("Response is %s ", response)
 
 		case "set":
-			if parsedMessage.MessagesLength >= 2 {
+			if parsedMessage.MessagesLength == 2 {
 				key := parsedMessage.Messages[0]
 				value := parsedMessage.Messages[1]
 				s.Set(key, value)
+				response = parser.Encode([]string{"OK"}, true)
+			} else if parsedMessage.MessagesLength == 4 {
+				key := parsedMessage.Messages[0]
+				value := parsedMessage.Messages[1]
+				ttl, _ := strconv.Atoi(parsedMessage.Messages[3])
+				s.SetWithTTL(key, value, ttl)
 				response = parser.Encode([]string{"OK"}, true)
 			} else {
 				response = parser.BULK_NULL_STRING
@@ -61,7 +68,7 @@ func handleClient(conn net.Conn, s *store.Store) {
 			if parsedMessage.MessagesLength >= 1 {
 				key := parsedMessage.Messages[0]
 				if value, ok := s.Get(key); !ok {
-					response = "$-1\r\n"
+					response = parser.BULK_NULL_STRING
 				} else {
 					response = parser.Encode([]string{value}, false)
 				}
