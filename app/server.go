@@ -7,31 +7,27 @@ import (
 	"os"
 
 	"github.com/codecrafters-io/redis-starter-go/pkg/parser"
+	"github.com/codecrafters-io/redis-starter-go/pkg/store"
 )
 
-var RedisMap map[string]string
-
 func main() {
-	// You can use print statements as follows for debugging, they'll be visible when running tests.
-	fmt.Println("Logs from your program will appear here!")
-	RedisMap = make(map[string]string)
+	store := store.New()
 	listener, err := net.Listen("tcp", "0.0.0.0:6379")
 	if err != nil {
 		fmt.Println("Failed to bind to port 6379")
 		os.Exit(1)
 	}
-
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
 			fmt.Println("Error accepting connection: ", err.Error())
 			os.Exit(1)
 		}
-		go handleClient(conn)
+		go handleClient(conn, store)
 	}
 }
 
-func handleClient(conn net.Conn) {
+func handleClient(conn net.Conn, s *store.Store) {
 	defer conn.Close()
 	for {
 		buffer := make([]byte, 1024)
@@ -54,7 +50,7 @@ func handleClient(conn net.Conn) {
 			if parsedMessage.MessagesLength >= 2 {
 				key := parsedMessage.Messages[0]
 				value := parsedMessage.Messages[1]
-				RedisMap[key] = value
+				s.Set(key, value)
 				response = parser.Encode([]string{"OK"}, true)
 			} else {
 				response = parser.BULK_NULL_STRING
@@ -64,7 +60,7 @@ func handleClient(conn net.Conn) {
 		case "get":
 			if parsedMessage.MessagesLength >= 1 {
 				key := parsedMessage.Messages[0]
-				if value, ok := RedisMap[key]; !ok {
+				if value, ok := s.Get(key); !ok {
 					response = "$-1\r\n"
 				} else {
 					response = parser.Encode([]string{value}, false)
