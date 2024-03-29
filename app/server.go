@@ -47,7 +47,11 @@ func handleClient(conn net.Conn) {
 			response = "+PONG\r\n"
 			fmt.Printf("Response is %s ", response)
 		case "echo":
-			response = fmt.Sprintf("$%d\r\n%s\r\n", len(parsedMessage.Messages[0]), parsedMessage.Messages)
+			if parsedMessage.MessagesLength > 0 {
+				response = fmt.Sprintf("$%d\r\n%s\r\n", len(parsedMessage.Messages[0]), parsedMessage.Messages[0])
+			} else {
+				response = "$-1\r\n"
+			}
 			fmt.Printf("Response is %s ", response)
 
 		case "set":
