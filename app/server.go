@@ -51,7 +51,7 @@ func handleClient(conn net.Conn, s *store.Store, glb args.RedisArgs) {
 		switch parsedMessage.Method {
 		case "ping":
 			fmt.Println("Error here")
-			response = parser.EncodeAck("PONG")
+			response = parser.EncodeSimpleString("PONG")
 			fmt.Printf("Response is %s ", response)
 
 		case "echo":
@@ -63,13 +63,13 @@ func handleClient(conn net.Conn, s *store.Store, glb args.RedisArgs) {
 				key := parsedMessage.Messages[0]
 				value := parsedMessage.Messages[1]
 				s.Set(key, value)
-				response = parser.EncodeAck("OK")
+				response = parser.EncodeSimpleString("OK")
 			} else if parsedMessage.MessagesLength == 4 {
 				key := parsedMessage.Messages[0]
 				value := parsedMessage.Messages[1]
 				ttl, _ := strconv.Atoi(parsedMessage.Messages[3])
 				s.SetWithTTL(key, value, ttl)
-				response = parser.EncodeAck("OK")
+				response = parser.EncodeSimpleString("OK")
 			} else {
 				response = parser.BULK_NULL_STRING
 			}
@@ -104,8 +104,12 @@ func handleClient(conn net.Conn, s *store.Store, glb args.RedisArgs) {
 			fmt.Printf("Response is %s ", []byte(response))
 
 		case "replconf":
-			response = parser.EncodeAck("OK")
+			response = parser.EncodeSimpleString("OK")
 			fmt.Printf("Response for replconf is %s ", []byte(response))
+
+		case "psync":
+			response = parser.EncodeSimpleString(fmt.Sprintf("FULLRESYNC %s %d", glb.ReplicationConfig.ReplicationId, glb.ReplicationConfig.ReplicationOffset))
+			fmt.Printf("Response for psync is %s ", []byte(response))
 
 		default:
 			fmt.Printf("Buffer: %s\n", buffer[:recievedBytes])

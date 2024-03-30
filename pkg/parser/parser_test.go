@@ -116,3 +116,12 @@ func TestMasterPing(t *testing.T) {
 	fmt.Printf("\nMethod: %s\nMessage: %s\nMessage length: %d\nSegment Length: %d\n", msg.Method, msg.Messages, msg.MessagesLength, msg.SegmentLength)
 
 }
+
+func TestParserPsync(t *testing.T) {
+	input := parser.EncodeRespArray([]string{"PSYNC", "?", fmt.Sprintf("%d", -1)})
+	msg, err := parser.Decode([]byte(input))
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Printf("\nMethod: %s\nMessage: %s\nMessage length: %d\nSegment Length: %d\n", msg.Method, msg.Messages, msg.MessagesLength, msg.SegmentLength)
+}

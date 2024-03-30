@@ -102,7 +102,7 @@ func EncodeRespArray(messages []string) string {
 	}
 }
 
-func EncodeAck(msg string) string {
+func EncodeSimpleString(msg string) string {
 	return fmt.Sprintf("+%s\r\n", msg)
 }
 

@@ -36,6 +36,14 @@ func SendReplConfMessage(conn net.Conn, glb args.RedisArgs) error {
 	return nil
 }
 
+func SendPsyncMessage(conn net.Conn, glb args.RedisArgs) error {
+	_, err := conn.Write([]byte(parser.EncodeRespArray([]string{"PSYNC", "?", fmt.Sprintf("%d", -1)})))
+	if err != nil {
+		return fmt.Errorf("error sending PSYNC listening port message to master: %v", err)
+	}
+	return nil
+}
+
 func HandleHandShake(glb args.RedisArgs) error {
 	conn, err := ConnectToMaster(glb)
 	if err != nil {
@@ -44,6 +52,7 @@ func HandleHandShake(glb args.RedisArgs) error {
 	}
 
 	PingMaster(conn, glb)
+	//Ping command read
 	data := make([]byte, 1024)
 	d, err := conn.Read(data)
 	if err != nil {
@@ -52,8 +61,8 @@ func HandleHandShake(glb args.RedisArgs) error {
 	res := data[:d]
 	fmt.Printf("Message from Master Ping %s", string(res))
 
-	//Replf Conf Message
 	SendReplConfMessage(conn, glb)
+	//Replf Conf Listening Port Message
 	data = make([]byte, 1024)
 	d, err = conn.Read(data)
 	if err != nil {
@@ -62,6 +71,7 @@ func HandleHandShake(glb args.RedisArgs) error {
 	res = data[:d]
 	fmt.Printf("Message from Master Replconf-1 %s", string(res))
 
+	//Replf Conf Psync Message
 	data = make([]byte, 1024)
 	d, err = conn.Read(data)
 	if err != nil {
@@ -69,5 +79,16 @@ func HandleHandShake(glb args.RedisArgs) error {
 	}
 	res = data[:d]
 	fmt.Printf("Message from Master Replconf-2 %s", string(res))
+
+	SendPsyncMessage(conn, glb)
+	//Replf Conf Psync Message
+	data = make([]byte, 1024)
+	d, err = conn.Read(data)
+	if err != nil {
+		fmt.Println(err)
+	}
+	res = data[:d]
+	fmt.Printf("Message from Master Psync %s", string(res))
+
 	return nil
 }
