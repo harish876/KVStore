@@ -86,9 +86,7 @@ func handleClient(conn net.Conn, s *store.Store, glb args.RedisArgs) {
 			if parsedMessage.MessagesLength >= 1 && parsedMessage.Messages[0] == "replication" {
 				var infoParams []string
 				if glb.Role == args.MASTER_ROLE {
-					infoParams = append(infoParams, parser.GetLablelledMessage("role", glb.Role),
-						parser.GetLablelledMessage("master_replid", "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb"),
-						parser.GetLablelledMessage("master_repl_offset", 0))
+					infoParams = append(infoParams, fmt.Sprintf("role:%s\r\nmaster_replid:%s\r\nmaster_repl_offset:%d", glb.Role, "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb", 0))
 				} else {
 					infoParams = append(infoParams, parser.GetLablelledMessage("role", args.SLAVE_ROLE))
 				}
@@ -96,7 +94,7 @@ func handleClient(conn net.Conn, s *store.Store, glb args.RedisArgs) {
 			} else {
 				response = parser.BULK_NULL_STRING
 			}
-			fmt.Printf("Response is %s ", response)
+			fmt.Printf("Response is %s ", []byte(response))
 
 		default:
 			fmt.Printf("Buffer: %s\n", buffer[:recievedBytes])
