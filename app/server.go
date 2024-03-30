@@ -102,6 +102,10 @@ func handleClient(conn net.Conn, s *store.Store, glb args.RedisArgs) {
 			}
 			fmt.Printf("Response is %s ", []byte(response))
 
+		case "replconf":
+			response = parser.EncodeAck("OK")
+			fmt.Printf("Response is %s ", []byte(response))
+
 		default:
 			fmt.Printf("Buffer: %s\n", buffer[:recievedBytes])
 			fmt.Printf("Parsed Message: %s\n", parsedMessage.Messages)
