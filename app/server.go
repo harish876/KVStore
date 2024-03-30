@@ -24,7 +24,7 @@ func main() {
 		fmt.Printf("Failed to bind to port %d\n", glbArgs.ServerPort)
 		os.Exit(1)
 	}
-	err = replication.ConnectToMaster(glbArgs)
+	err = replication.CreateReplClient(glbArgs)
 	if err != nil {
 		fmt.Printf("Failed to connect to master")
 	}
