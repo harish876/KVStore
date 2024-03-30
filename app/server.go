@@ -61,7 +61,7 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 			fmt.Printf("Response is %s ", response)
 
 		case "set":
-			fmt.Printf("SET Message for %s %q", glb.Role, parsedMessage.Messages)
+			fmt.Printf("SET Message for %s %q\n", glb.Role, parsedMessage.Messages)
 			if parsedMessage.MessagesLength == 2 {
 				key := parsedMessage.Messages[0]
 				value := parsedMessage.Messages[1]
@@ -76,7 +76,7 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 			} else {
 				response = parser.BULK_NULL_STRING
 			}
-			fmt.Printf("Response is %s ", response)
+			fmt.Printf("\nResponse is %s \n", response)
 
 		case "get":
 			if parsedMessage.MessagesLength >= 1 {
