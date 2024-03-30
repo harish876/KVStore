@@ -67,12 +67,14 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 				value := parsedMessage.Messages[1]
 				s.Set(key, value)
 				response = parser.EncodeSimpleString("OK")
+
 			} else if parsedMessage.MessagesLength == 4 {
 				key := parsedMessage.Messages[0]
 				value := parsedMessage.Messages[1]
 				ttl, _ := strconv.Atoi(parsedMessage.Messages[3])
 				s.SetWithTTL(key, value, ttl)
 				response = parser.EncodeSimpleString("OK")
+
 			} else {
 				response = parser.BULK_NULL_STRING
 			}
@@ -113,7 +115,9 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 					fmt.Println("Listening Port Recieved is ", lport)
 					if err == nil {
 						fmt.Println("Incoming Replica Connection is", conn.LocalAddr().String())
-						glb.ReplicationConfig.Replicas = append(glb.ReplicationConfig.Replicas, args.Replicas{Conn: conn})
+						listener, _ := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", lport))
+						rconn, _ := listener.Accept()
+						glb.ReplicationConfig.Replicas = append(glb.ReplicationConfig.Replicas, args.Replicas{Conn: rconn})
 					}
 				}
 				response = parser.EncodeSimpleString("OK")

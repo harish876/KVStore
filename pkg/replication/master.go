@@ -24,7 +24,7 @@ func ReplicateWrite(glb *args.RedisArgs) {
 		// fmt.Printf("Message Recieved from Channel %s", msg)
 		for _, rConn := range glb.ReplicationConfig.Replicas {
 			fmt.Println("The Replica url is ", rConn.Conn.LocalAddr().String())
-			sentBytes, err := rConn.Conn.Write([]byte(fmt.Sprintf("%s:%s", "FROM_MASTER", msg)))
+			sentBytes, err := rConn.Conn.Write([]byte(msg))
 			if err != nil {
 				fmt.Println("Error writing response: ", err.Error())
 			}
