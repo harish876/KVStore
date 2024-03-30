@@ -102,11 +102,19 @@ func handleClient(conn net.Conn, s *store.Store, glb args.RedisArgs) {
 			fmt.Printf("Response is %s ", []byte(response))
 
 		case "replconf":
-			response = parser.EncodeSimpleString("OK")
+			if glb.Role == args.MASTER_ROLE {
+				response = parser.EncodeSimpleString("OK")
+			} else {
+				response = ""
+			}
 			fmt.Printf("Response for replconf is %s ", []byte(response))
 
 		case "psync":
-			response = parser.EncodeSimpleString(fmt.Sprintf("FULLRESYNC %s %d", glb.ReplicationConfig.ReplicationId, glb.ReplicationConfig.ReplicationOffset))
+			if glb.Role == args.MASTER_ROLE {
+				response = parser.EncodeSimpleString(fmt.Sprintf("FULLRESYNC %s %d", glb.ReplicationConfig.ReplicationId, glb.ReplicationConfig.ReplicationOffset))
+			} else {
+				response = ""
+			}
 			fmt.Printf("Response for psync is %s ", []byte(response))
 
 		default:
