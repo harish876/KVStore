@@ -24,7 +24,7 @@ func ReplicateWrite(glb *args.RedisArgs) {
 		fmt.Printf("Message Recieved from Channel %s", msg)
 		fmt.Println(glb.ReplicationConfig.Replicas)
 		for _, replicaPort := range glb.ReplicationConfig.Replicas {
-			conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", glb.MasterHost, replicaPort.Port))
+			conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", "localhost", replicaPort.Port))
 			if err != nil {
 				fmt.Printf("Unable to replicate message: to server with port %d. Error: %v", replicaPort.Port, err)
 				continue
