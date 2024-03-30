@@ -49,6 +49,7 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 		fmt.Printf("Recieved Bytes in request: %d\n", recievedBytes)
 		request := string(buffer[:recievedBytes])
 		parsedMessage, _ := parser.Decode(buffer[:recievedBytes])
+
 		var response string
 		switch parsedMessage.Method {
 		case "ping":
@@ -60,6 +61,7 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 			fmt.Printf("Response is %s ", response)
 
 		case "set":
+			fmt.Printf("Message from %s %q", glb.Role, parsedMessage)
 			if parsedMessage.MessagesLength == 2 {
 				key := parsedMessage.Messages[0]
 				value := parsedMessage.Messages[1]
