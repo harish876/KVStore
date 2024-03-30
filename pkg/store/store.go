@@ -3,7 +3,7 @@ package store
 import "time"
 
 var (
-	DEFAULT_TTL = 120000 //120 seconds
+	DEFAULT_TTL = 12000000 //120 seconds
 )
 
 type RedisMapValue struct {
