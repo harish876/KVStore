@@ -24,17 +24,9 @@ func main() {
 		fmt.Printf("Failed to bind to port %d\n", glbArgs.ServerPort)
 		os.Exit(1)
 	}
-	if glbArgs.Role == args.SLAVE_ROLE && glbArgs.ServerPort != glbArgs.MasterPort {
-		fmt.Println("Patrick Mahomes Voice. I am here...")
-		clientConn, err := replication.ConnectToMaster(glbArgs)
-		if err != nil {
-			fmt.Printf("Failed to connect to master")
-		}
-		defer clientConn.Close()
-		replication.PingMaster(clientConn, glbArgs)
-		replication.SendReplConfMessage(clientConn, glbArgs)
+	if glbArgs.Role == args.SLAVE_ROLE {
+		replication.HandleHandShake(glbArgs)
 	}
-
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
