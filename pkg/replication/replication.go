@@ -52,6 +52,7 @@ func SendReplConfMessage(conn net.Conn, glb args.RedisArgs) error {
 	return nil
 }
 
+// what
 func CreateReplClient(glb args.RedisArgs) error {
 	conn, err := ConnectToMaster(glb)
 	if conn == nil {
