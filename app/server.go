@@ -117,8 +117,7 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 						fmt.Println("Incoming Replica Connection is", fmt.Sprintf("0.0.0.0:%d", lport))
 						listener, _ := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", lport))
 						rconn, _ := listener.Accept()
-						glb.ReplicationConfig.Replicas = append(glb.ReplicationConfig.Replicas, args.Replicas{Conn: rconn})
-						rconn.Write([]byte(parser.EncodeSimpleString("OK")))
+						glb.ReplicationConfig.Replicas = append(glb.ReplicationConfig.Replicas, args.Replicas{Conn: rconn}, args.Replicas{Conn: conn})
 					}
 				}
 				response = parser.EncodeSimpleString("OK")
