@@ -1,6 +1,7 @@
 package parser_test
 
 import (
+	"encoding/base64"
 	"fmt"
 	"regexp"
 	"testing"
@@ -124,4 +125,14 @@ func TestParserPsync(t *testing.T) {
 		t.Fatal(err)
 	}
 	fmt.Printf("\nMethod: %s\nMessage: %s\nMessage length: %d\nSegment Length: %d\n", msg.Method, msg.Messages, msg.MessagesLength, msg.SegmentLength)
+}
+
+func TestRdb(t *testing.T) {
+	base64String := "UkVESVMwMDEx+glyZWRpcy12ZXIFNy4yLjD6CnJlZGlzLWJpdHPAQPoFY3RpbWXCbQi8ZfoIdXNlZC1tZW3CsMQQAPoIYW9mLWJhc2XAAP/wbjv+wP9aog=="
+	response, err := base64.StdEncoding.DecodeString(base64String)
+	if err != nil {
+		t.Fatal("Error decoding Base64:", err)
+		return
+	}
+	fmt.Println(len(response), string(response))
 }

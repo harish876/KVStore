@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/codecrafters-io/redis-starter-go/pkg/args"
 	"github.com/codecrafters-io/redis-starter-go/pkg/parser"
@@ -23,7 +24,7 @@ func main() {
 		os.Exit(1)
 	}
 	if glbArgs.Role == args.SLAVE_ROLE {
-		replication.HandleHandShake(glbArgs)
+		replication.HandleHandShakeWithMaster(glbArgs)
 	}
 	for {
 		conn, err := listener.Accept()
@@ -126,6 +127,9 @@ func handleClient(conn net.Conn, s *store.Store, glb args.RedisArgs) {
 		if err != nil {
 			fmt.Println("Error writing response: ", err.Error())
 			break
+		}
+		if glb.Role == args.MASTER_ROLE && strings.Contains(response, "FULLRESYNC") {
+			replication.SendRdbMessage(conn, glb)
 		}
 		fmt.Printf("Number of Bytes sent : %d\n", sentBytes)
 	}

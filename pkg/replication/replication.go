@@ -44,7 +44,7 @@ func SendPsyncMessage(conn net.Conn, glb args.RedisArgs) error {
 	return nil
 }
 
-func HandleHandShake(glb args.RedisArgs) error {
+func HandleHandShakeWithMaster(glb args.RedisArgs) error {
 	conn, err := ConnectToMaster(glb)
 	if err != nil {
 		fmt.Printf("Failed to connect to master %v", err)
