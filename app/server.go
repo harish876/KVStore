@@ -28,7 +28,9 @@ func main() {
 	if err != nil {
 		fmt.Printf("Failed to connect to master")
 	}
-	replication.PingMaster(clientConn, glbArgs)
+	if clientConn != nil {
+		replication.PingMaster(clientConn, glbArgs)
+	}
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
