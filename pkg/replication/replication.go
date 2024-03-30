@@ -19,7 +19,12 @@ func ConnectToMaster(glb args.RedisArgs) error {
 	if err != nil {
 		return err
 	}
+	defer conn.Close()
 	err = PingMaster(conn, glb)
+	if err != nil {
+		return err
+	}
+	err = SendReplConfMessage(conn, glb)
 	if err != nil {
 		return err
 	}
@@ -28,13 +33,16 @@ func ConnectToMaster(glb args.RedisArgs) error {
 
 // Fire and Forget now, Listen to the message!
 func PingMaster(conn net.Conn, glb args.RedisArgs) error {
-	defer conn.Close()
 
 	_, err := conn.Write([]byte(parser.EncodeRespArray([]string{"PING"})))
 	if err != nil {
 		return fmt.Errorf("error sending PING message to master: %v", err)
 	}
-	_, err = conn.Write([]byte(parser.EncodeRespArray([]string{"REPLCONF", "listening-port", fmt.Sprintf("%d", glb.ServerPort)})))
+	return nil
+}
+
+func SendReplConfMessage(conn net.Conn, glb args.RedisArgs) error {
+	_, err := conn.Write([]byte(parser.EncodeRespArray([]string{"REPLCONF", "listening-port", fmt.Sprintf("%d", glb.ServerPort)})))
 	if err != nil {
 		return fmt.Errorf("error sending REPLCONF listening port message to master: %v", err)
 	}
