@@ -29,7 +29,6 @@ func main() {
 		fmt.Printf("Failed to connect to master")
 	}
 	replication.PingMaster(clientConn, glbArgs)
-	clientConn.Close()
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
