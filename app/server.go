@@ -13,8 +13,6 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/pkg/store"
 )
 
-//run test again
-
 func main() {
 	store := store.New()
 	glbArgs := args.ParseArgs()
