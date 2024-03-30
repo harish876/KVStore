@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
+	"net"
 	"os"
 	"strconv"
 	"strings"
@@ -18,7 +19,7 @@ type ReplicationConfig struct {
 }
 
 type Replicas struct {
-	Port int
+	Conn net.Conn
 }
 
 type RedisArgs struct {

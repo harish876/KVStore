@@ -108,11 +108,10 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 			if glb.Role == args.MASTER_ROLE {
 				if parsedMessage.MessagesLength == 2 && parsedMessage.Messages[0] == "listening-port" {
 					lport, err := strconv.Atoi(parsedMessage.Messages[1])
+					fmt.Println("Listening Port is ", lport)
 					if err == nil {
-						fmt.Println("Incoming Port is", lport)
-						if !findPortInSet(glb.ReplicationConfig.Replicas, lport) {
-							glb.ReplicationConfig.Replicas = append(glb.ReplicationConfig.Replicas, args.Replicas{Port: lport})
-						}
+						fmt.Println("Incoming Replica Connection is", conn.LocalAddr().String())
+						glb.ReplicationConfig.Replicas = append(glb.ReplicationConfig.Replicas, args.Replicas{Conn: conn})
 					}
 				}
 				response = parser.EncodeSimpleString("OK")
@@ -147,13 +146,4 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 		}
 		fmt.Printf("Number of Bytes sent : %d\n", sentBytes)
 	}
-}
-
-func findPortInSet(arr []args.Replicas, target int) bool {
-	for _, value := range arr {
-		if value.Port == target {
-			return true
-		}
-	}
-	return false
 }

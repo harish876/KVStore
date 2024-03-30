@@ -25,29 +25,13 @@ func ReplicateWrite(glb *args.RedisArgs) {
 	for msg := range glb.ReplicationChannel {
 		fmt.Printf("Message Recieved from Channel %s", msg)
 		fmt.Println(glb.ReplicationConfig.Replicas)
-		for _, replicaPort := range glb.ReplicationConfig.Replicas {
-			url := fmt.Sprintf("0.0.0.0:%d", replicaPort.Port)
-			fmt.Println("The url is", url)
-			conn, err := net.Dial("tcp", url)
-			if err != nil {
-				fmt.Printf("Unable to replicate message: to server with port %d. Error: %v", replicaPort.Port, err)
-				continue
-			}
-			sentBytes, err := conn.Write([]byte(msg))
+		for _, rConn := range glb.ReplicationConfig.Replicas {
+			fmt.Println("The url is", rConn.Conn.LocalAddr().String())
+			sentBytes, err := rConn.Conn.Write([]byte(msg))
 			if err != nil {
 				fmt.Println("Error writing response: ", err.Error())
 			}
 			fmt.Printf("Sent Byte count of SET command %d", sentBytes)
 		}
-		// conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", glb.MasterHost, glb.MasterPort))
-		// if err != nil {
-		// 	fmt.Printf("Unable to replicate message: to server with port %d. Error: %v", glb.MasterPort, err)
-		// 	continue
-		// }
-		// sentBytes, err := conn.Write([]byte(msg))
-		// if err != nil {
-		// 	fmt.Println("Error writing response: ", err.Error())
-		// }
-		// fmt.Printf("Sent Byte count of SET command %d", sentBytes)
 	}
 }
