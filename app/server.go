@@ -108,7 +108,7 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 			if glb.Role == args.MASTER_ROLE {
 				if parsedMessage.MessagesLength == 2 && parsedMessage.Messages[0] == "listening-port" {
 					lport, err := strconv.Atoi(parsedMessage.Messages[1])
-					fmt.Println("Listening Port is ", lport)
+					fmt.Println("Listening Port Recieved is ", lport)
 					if err == nil {
 						fmt.Println("Incoming Replica Connection is", conn.LocalAddr().String())
 						glb.ReplicationConfig.Replicas = append(glb.ReplicationConfig.Replicas, args.Replicas{Conn: conn})
