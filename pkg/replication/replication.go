@@ -29,19 +29,15 @@ func PingMaster(conn net.Conn, glb args.RedisArgs) error {
 	if err != nil {
 		return fmt.Errorf("error sending PING message to master: %v", err)
 	}
-	var readError error
-	for {
-		buffer := make([]byte, 1024)
-		recievedBytes, err := conn.Read(buffer)
-		if err != nil {
-			readError = err
-			break
-		}
-		fmt.Printf("Recieved Bytes in request: %d\n", recievedBytes)
-		parsedMessage, _ := parser.Decode(buffer[:recievedBytes])
-		fmt.Println("Response to Ping Command", parsedMessage)
+	buffer := make([]byte, 1024)
+	recievedBytes, err := conn.Read(buffer)
+	if err != nil {
+		return err
 	}
-	return readError
+	fmt.Printf("Recieved Bytes in request: %d\n", recievedBytes)
+	parsedMessage, _ := parser.Decode(buffer[:recievedBytes])
+	fmt.Println("Response to Ping Command", parsedMessage)
+	return nil
 }
 
 func SendReplConfMessage(conn net.Conn, glb args.RedisArgs) error {
@@ -56,23 +52,23 @@ func SendReplConfMessage(conn net.Conn, glb args.RedisArgs) error {
 	return nil
 }
 
-// what
-func CreateReplClient(glb args.RedisArgs) error {
-	conn, err := ConnectToMaster(glb)
-	if conn == nil {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
-	err = PingMaster(conn, glb)
-	if err != nil {
-		return err
-	}
-	err = SendReplConfMessage(conn, glb)
-	if err != nil {
-		return err
-	}
-	return nil
-}
+// // what
+// func CreateReplClient(glb args.RedisArgs) error {
+// 	conn, err := ConnectToMaster(glb)
+// 	if conn == nil {
+// 		return nil
+// 	}
+// 	if err != nil {
+// 		return err
+// 	}
+// 	defer conn.Close()
+// 	err = PingMaster(conn, glb)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	err = SendReplConfMessage(conn, glb)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }
