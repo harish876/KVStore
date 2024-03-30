@@ -9,8 +9,6 @@ import (
 )
 
 func SendRdbMessage(conn net.Conn, glb *args.RedisArgs) {
-	fmt.Println("Remote", conn.RemoteAddr().String())
-	fmt.Println("Remote", conn.LocalAddr().String())
 	base64String := "UkVESVMwMDEx+glyZWRpcy12ZXIFNy4yLjD6CnJlZGlzLWJpdHPAQPoFY3RpbWXCbQi8ZfoIdXNlZC1tZW3CsMQQAPoIYW9mLWJhc2XAAP/wbjv+wP9aog=="
 	response, _ := base64.StdEncoding.DecodeString(base64String)
 	stringResponse := string(response)
