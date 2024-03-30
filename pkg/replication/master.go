@@ -19,13 +19,20 @@ func SendRdbMessage(conn net.Conn, glb *args.RedisArgs) {
 	fmt.Printf("Sent Byte count of RDB message %d", sentBytes)
 }
 
-func ReplicateWrite(conn net.Conn, glb *args.RedisArgs) {
+func ReplicateWrite(glb *args.RedisArgs) {
 	for msg := range glb.ReplicationChannel {
 		fmt.Printf("Message Recieved from Channel %s", msg)
-		sentBytes, err := conn.Write([]byte(msg))
-		if err != nil {
-			fmt.Println("Error writing response: ", err.Error())
+		for _, replicaPort := range glb.ReplicationConfig.Replicas {
+			conn, err := net.Dial("tcp", fmt.Sprintf("0.0.0.0:%d", replicaPort.Port))
+			if err != nil {
+				fmt.Printf("Unable to replicate message: %s to server with port %d. Error: %v", msg, replicaPort.Port, err)
+				continue
+			}
+			sentBytes, err := conn.Write([]byte(msg))
+			if err != nil {
+				fmt.Println("Error writing response: ", err.Error())
+			}
+			fmt.Printf("Sent Byte count of SET command %d", sentBytes)
 		}
-		fmt.Printf("Sent Byte count of SET command %d", sentBytes)
 	}
 }
