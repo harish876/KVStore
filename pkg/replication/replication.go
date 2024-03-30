@@ -23,7 +23,6 @@ func PingMaster(conn net.Conn, glb args.RedisArgs) error {
 	}
 	return nil
 }
-
 func SendReplConfMessage(conn net.Conn, glb args.RedisArgs) error {
 	_, err := conn.Write([]byte(parser.EncodeRespArray([]string{"REPLCONF", "listening-port", fmt.Sprintf("%d", glb.ServerPort)})))
 	if err != nil {
@@ -35,7 +34,6 @@ func SendReplConfMessage(conn net.Conn, glb args.RedisArgs) error {
 	}
 	return nil
 }
-
 func SendPsyncMessage(conn net.Conn, glb args.RedisArgs) error {
 	_, err := conn.Write([]byte(parser.EncodeRespArray([]string{"PSYNC", "?", fmt.Sprintf("%d", -1)})))
 	if err != nil {
@@ -43,7 +41,6 @@ func SendPsyncMessage(conn net.Conn, glb args.RedisArgs) error {
 	}
 	return nil
 }
-
 func HandleHandShakeWithMaster(glb args.RedisArgs) error {
 	conn, err := ConnectToMaster(glb)
 	if err != nil {

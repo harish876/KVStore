@@ -16,24 +16,34 @@ func SendRdbMessage(conn net.Conn, glb *args.RedisArgs) {
 	if err != nil {
 		fmt.Println("Error writing response: ", err.Error())
 	}
-	fmt.Printf("Sent Byte count of RDB message %d", sentBytes)
+	fmt.Printf("Sent Byte count of RDB message %d\n", sentBytes)
 }
 
 func ReplicateWrite(glb *args.RedisArgs) {
 	for msg := range glb.ReplicationChannel {
 		fmt.Printf("Message Recieved from Channel %s", msg)
 		fmt.Println(glb.ReplicationConfig.Replicas)
-		for _, replicaPort := range glb.ReplicationConfig.Replicas {
-			conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", glb.MasterHost, replicaPort.Port))
-			if err != nil {
-				fmt.Printf("Unable to replicate message: %s to server with port %d. Error: %v", msg, replicaPort.Port, err)
-				continue
-			}
-			sentBytes, err := conn.Write([]byte(msg))
-			if err != nil {
-				fmt.Println("Error writing response: ", err.Error())
-			}
-			fmt.Printf("Sent Byte count of SET command %d", sentBytes)
+		// for _, replicaPort := range glb.ReplicationConfig.Replicas {
+		// 	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", glb.MasterHost, glb.MasterPort))
+		// 	if err != nil {
+		// 		fmt.Printf("Unable to replicate message: to server with port %d. Error: %v", replicaPort.Port, err)
+		// 		continue
+		// 	}
+		// 	sentBytes, err := conn.Write([]byte(msg))
+		// 	if err != nil {
+		// 		fmt.Println("Error writing response: ", err.Error())
+		// 	}
+		// 	fmt.Printf("Sent Byte count of SET command %d", sentBytes)
+		// }
+		conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", glb.MasterHost, glb.MasterPort))
+		if err != nil {
+			fmt.Printf("Unable to replicate message: to server with port %d. Error: %v", glb.MasterPort, err)
+			continue
 		}
+		sentBytes, err := conn.Write([]byte(msg))
+		if err != nil {
+			fmt.Println("Error writing response: ", err.Error())
+		}
+		fmt.Printf("Sent Byte count of SET command %d", sentBytes)
 	}
 }
