@@ -1,16 +1,27 @@
 package args
 
 import (
+	"crypto/sha512"
+	"encoding/hex"
 	"flag"
+	"fmt"
+	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
+type ReplicationConfig struct {
+	ReplicationId     string
+	ReplicationOffset int
+}
+
 type RedisArgs struct {
-	ServerPort int
-	MasterHost string
-	MasterPort int
-	Role       string
+	ServerPort        int
+	MasterHost        string
+	MasterPort        int
+	Role              string
+	ReplicationConfig ReplicationConfig
 }
 
 var (
@@ -56,5 +67,23 @@ func ParseArgs() RedisArgs {
 		MasterPort: masterPort,
 		MasterHost: masterHost,
 		Role:       role,
+		ReplicationConfig: ReplicationConfig{
+			ReplicationId:     GenerateReplicationId(),
+			ReplicationOffset: 0,
+		},
 	}
+}
+
+func GenerateReplicationId() string {
+	timestamp := time.Now().Unix()
+	machineID, err := os.Hostname()
+	if err != nil {
+		machineID = DEFAULT_HOST
+	}
+	data := fmt.Sprintf("%d%s", timestamp, machineID)
+	hash := sha512.Sum512([]byte(data))
+	hashHex := hex.EncodeToString(hash[:])
+	truncatedHash := hashHex[:40]
+
+	return truncatedHash
 }

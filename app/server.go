@@ -9,6 +9,7 @@ import (
 
 	"github.com/codecrafters-io/redis-starter-go/pkg/args"
 	"github.com/codecrafters-io/redis-starter-go/pkg/parser"
+	"github.com/codecrafters-io/redis-starter-go/pkg/replication"
 	"github.com/codecrafters-io/redis-starter-go/pkg/store"
 )
 
@@ -20,8 +21,12 @@ func main() {
 	fmt.Println(glbArgs)
 	listener, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", glbArgs.ServerPort))
 	if err != nil {
-		fmt.Println("Failed to bind to port 6379")
+		fmt.Printf("Failed to bind to port %d\n", glbArgs.ServerPort)
 		os.Exit(1)
+	}
+	err = replication.ConnectToMaster(glbArgs)
+	if err != nil {
+		fmt.Printf("Failed to connect to master")
 	}
 	for {
 		conn, err := listener.Accept()
@@ -49,7 +54,7 @@ func handleClient(conn net.Conn, s *store.Store, glb args.RedisArgs) {
 			response = parser.EncodeAck("PONG")
 			fmt.Printf("Response is %s ", response)
 		case "echo":
-			response = parser.EncodeResponse(parsedMessage.Messages)
+			response = parser.EncodeRespString(parsedMessage.Messages)
 			fmt.Printf("Response is %s ", response)
 
 		case "set":
@@ -75,7 +80,7 @@ func handleClient(conn net.Conn, s *store.Store, glb args.RedisArgs) {
 				if value, ok := s.Get(key); !ok {
 					response = parser.BULK_NULL_STRING
 				} else {
-					response = parser.EncodeResponse([]string{value})
+					response = parser.EncodeRespString([]string{value})
 				}
 			} else {
 				response = parser.BULK_NULL_STRING
@@ -86,11 +91,12 @@ func handleClient(conn net.Conn, s *store.Store, glb args.RedisArgs) {
 			if parsedMessage.MessagesLength >= 1 && parsedMessage.Messages[0] == "replication" {
 				var infoParams []string
 				if glb.Role == args.MASTER_ROLE {
-					infoParams = append(infoParams, fmt.Sprintf("role:%s\r\nmaster_replid:%s\r\nmaster_repl_offset:%d", glb.Role, "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb", 0))
+					/* Test Case issue when building a single string */
+					infoParams = append(infoParams, fmt.Sprintf("role:%s\r\nmaster_replid:%s\r\nmaster_repl_offset:%d", glb.Role, glb.ReplicationConfig.ReplicationId, glb.ReplicationConfig.ReplicationOffset))
 				} else {
 					infoParams = append(infoParams, parser.GetLablelledMessage("role", args.SLAVE_ROLE))
 				}
-				response = parser.EncodeResponse(infoParams)
+				response = parser.EncodeRespString(infoParams)
 			} else {
 				response = parser.BULK_NULL_STRING
 			}

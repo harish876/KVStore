@@ -76,7 +76,8 @@ func Decode(msg []byte) (RESPMessage, error) {
 	return parsedRespMessage, nil
 }
 
-func EncodeResponse(messages []string) string {
+/* Only works for array of length 1*/
+func EncodeRespString(messages []string) string {
 	if len(messages) > 0 {
 		var result string
 		for _, msg := range messages {
@@ -88,7 +89,7 @@ func EncodeResponse(messages []string) string {
 	}
 }
 
-func EncodeRequest(messages []string) string {
+func EncodeRespArray(messages []string) string {
 	if len(messages) > 0 {
 		var result string
 		result += fmt.Sprintf("*%d\r\n", len(messages))
@@ -113,4 +114,9 @@ func GetLablelledMessage(label string, value any) string {
 	} else {
 		return fmt.Sprintf("%s:%v", label, value)
 	}
+}
+
+// TODO: Implement this later to have a nice message builder
+func EncodeSingleMessage(messages []string) string {
+	return ""
 }
