@@ -112,12 +112,9 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 			if glb.Role == args.MASTER_ROLE {
 				if parsedMessage.MessagesLength == 2 && parsedMessage.Messages[0] == "listening-port" {
 					lport, err := strconv.Atoi(parsedMessage.Messages[1])
-					fmt.Println("Listening Port Recieved is ", lport)
 					if err == nil {
 						fmt.Println("Incoming Replica Connection is", fmt.Sprintf("0.0.0.0:%d", lport))
-						listener, _ := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", lport))
-						rconn, _ := listener.Accept()
-						glb.ReplicationConfig.Replicas = append(glb.ReplicationConfig.Replicas, args.Replicas{Conn: rconn}, args.Replicas{Conn: conn})
+						glb.ReplicationConfig.Replicas = append(glb.ReplicationConfig.Replicas, args.Replicas{Conn: conn})
 					}
 				}
 				response = parser.EncodeSimpleString("OK")
