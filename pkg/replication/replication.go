@@ -9,11 +9,6 @@ import (
 )
 
 func ConnectToMaster(glb args.RedisArgs) (net.Conn, error) {
-	if glb.Role == args.MASTER_ROLE && glb.ServerPort != glb.MasterPort {
-		fmt.Printf("This is the master itself. No need to connect")
-		return nil, nil
-	}
-	fmt.Println("Degugging...")
 	master := fmt.Sprintf("0.0.0.0:%d", glb.MasterPort)
 	conn, err := net.Dial("tcp", master)
 	if err != nil {
