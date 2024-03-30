@@ -84,8 +84,8 @@ func HandleHandShakeWithMaster(glb args.RedisArgs) error {
 	if err != nil {
 		fmt.Println(err)
 	}
-	res = data[:d]
-	fmt.Printf("Message from Master Psync %s", string(res))
+	_ = data[:d]
+	// fmt.Printf("Message from Master Psync %s", string(res)) //ignore this log
 
 	return nil
 }
