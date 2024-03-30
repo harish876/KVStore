@@ -29,14 +29,14 @@ func PingMaster(conn net.Conn, glb args.RedisArgs) error {
 	if err != nil {
 		return fmt.Errorf("error sending PING message to master: %v", err)
 	}
-	buffer := make([]byte, 1024)
-	recievedBytes, err := conn.Read(buffer)
-	if err != nil {
-		return err
-	}
-	fmt.Printf("Recieved Bytes in request: %d\n", recievedBytes)
-	parsedMessage, _ := parser.Decode(buffer[:recievedBytes])
-	fmt.Println("Response to Ping Command", parsedMessage)
+	// buffer := make([]byte, 1024)
+	// recievedBytes, err := conn.Read(buffer)
+	// if err != nil {
+	// 	return err
+	// }
+	// fmt.Printf("Recieved Bytes in request: %d\n", recievedBytes)
+	// parsedMessage, _ := parser.Decode(buffer[:recievedBytes])
+	// fmt.Println("Response to Ping Command", parsedMessage)
 	return nil
 }
 
