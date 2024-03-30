@@ -9,6 +9,7 @@ import (
 
 	"github.com/codecrafters-io/redis-starter-go/pkg/args"
 	"github.com/codecrafters-io/redis-starter-go/pkg/parser"
+	"github.com/codecrafters-io/redis-starter-go/pkg/replication"
 	"github.com/codecrafters-io/redis-starter-go/pkg/store"
 )
 
@@ -23,12 +24,12 @@ func main() {
 		fmt.Printf("Failed to bind to port %d\n", glbArgs.ServerPort)
 		os.Exit(1)
 	}
-	// clientConn, err := replication.ConnectToMaster(glbArgs)
-	// if err != nil {
-	// 	fmt.Printf("Failed to connect to master")
-	// }
-	// defer clientConn.Close()
-	// replication.PingMaster(clientConn, glbArgs)
+	clientConn, err := replication.ConnectToMaster(glbArgs)
+	if err != nil {
+		fmt.Printf("Failed to connect to master")
+	}
+	replication.PingMaster(clientConn, glbArgs)
+	clientConn.Close()
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
