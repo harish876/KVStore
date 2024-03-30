@@ -88,7 +88,7 @@ func handleClient(conn net.Conn, s *store.Store, glb args.RedisArgs) {
 				if glb.Role == args.MASTER_ROLE {
 					infoParams = append(infoParams, parser.GetLablelledMessage("role", glb.Role),
 						parser.GetLablelledMessage("master_replid", "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb"),
-						parser.GetLablelledMessage("master_repl_offset", "0"))
+						parser.GetLablelledMessage("master_repl_offset", 0))
 				} else {
 					infoParams = append(infoParams, parser.GetLablelledMessage("role", args.SLAVE_ROLE))
 				}

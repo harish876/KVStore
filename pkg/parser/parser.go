@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 )
@@ -104,6 +105,12 @@ func EncodeAck(msg string) string {
 	return fmt.Sprintf("+%s\r\n", msg)
 }
 
-func GetLablelledMessage(label, value string) string {
-	return fmt.Sprintf("%s:%s", label, value)
+func GetLablelledMessage(label string, value any) string {
+	if reflect.TypeOf(value).Kind() == reflect.Int {
+		return fmt.Sprintf("%s:%d", label, value)
+	} else if reflect.TypeOf(value).Kind() == reflect.String {
+		return fmt.Sprintf("%s:%s", label, value)
+	} else {
+		return fmt.Sprintf("%s:%v", label, value)
+	}
 }
