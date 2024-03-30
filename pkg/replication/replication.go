@@ -9,7 +9,7 @@ import (
 )
 
 func ConnectToMaster(glb args.RedisArgs) (net.Conn, error) {
-	master := fmt.Sprintf("0.0.0.0:%d", glb.MasterPort)
+	master := fmt.Sprintf("%s:%d", glb.MasterHost, glb.MasterPort)
 	conn, err := net.Dial("tcp", master)
 	if err != nil {
 		return nil, err
@@ -47,10 +47,10 @@ func HandleHandShake(glb args.RedisArgs) error {
 	data := make([]byte, 1024)
 	d, err := conn.Read(data)
 	if err != nil {
-		panic(err.Error)
+		fmt.Println(err)
 	}
 	SendReplConfMessage(conn, glb)
 	res := data[:d]
-	fmt.Println(res)
+	fmt.Println(string(res))
 	return nil
 }
