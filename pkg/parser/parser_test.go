@@ -102,9 +102,17 @@ func TestReplOffset(t *testing.T) {
 }
 
 func TestMasterPing(t *testing.T) {
-	fmt.Printf("\nPING:c%s\nREPLCONF1: %s\nREPLCONF2: %s\n",
-		parser.EncodeRespArray([]string{"PING"}),
-		parser.EncodeRespArray([]string{"REPLCONF", "listening-port", fmt.Sprintf("%d", 6380)}),
-		parser.EncodeRespArray([]string{"REPLCONF", "capa", "psync2"}),
-	)
+	// fmt.Printf("\nPING:c%s\nREPLCONF1: %s\nREPLCONF2: %s\n",
+	// 	parser.EncodeRespArray([]string{"PING"}),
+	// 	parser.EncodeRespArray([]string{"REPLCONF", "listening-port", fmt.Sprintf("%d", 6380)}),
+	// 	parser.EncodeRespArray([]string{"REPLCONF", "capa", "psync2"}),
+	// )
+
+	input := parser.EncodeRespArray([]string{"REPLCONF", "listening-port", fmt.Sprintf("%d", 6380)})
+	msg, err := parser.Decode([]byte(input))
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Printf("\nMethod: %s\nMessage: %s\nMessage length: %d\nSegment Length: %d\n", msg.Method, msg.Messages, msg.MessagesLength, msg.SegmentLength)
+
 }

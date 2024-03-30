@@ -53,6 +53,7 @@ func handleClient(conn net.Conn, s *store.Store, glb args.RedisArgs) {
 			fmt.Println("Error here")
 			response = parser.EncodeAck("PONG")
 			fmt.Printf("Response is %s ", response)
+
 		case "echo":
 			response = parser.EncodeRespString(parsedMessage.Messages)
 			fmt.Printf("Response is %s ", response)

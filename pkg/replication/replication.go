@@ -42,15 +42,24 @@ func HandleHandShake(glb args.RedisArgs) error {
 		fmt.Printf("Failed to connect to master %v", err)
 		return err
 	}
-	// defer conn.Close()
+
 	PingMaster(conn, glb)
 	data := make([]byte, 1024)
 	d, err := conn.Read(data)
 	if err != nil {
 		fmt.Println(err)
 	}
-	SendReplConfMessage(conn, glb)
 	res := data[:d]
-	fmt.Println(string(res))
+	fmt.Printf("Message from Master %s", string(res))
+
+	//Replf Conf Message
+	SendReplConfMessage(conn, glb)
+	data = make([]byte, 1024)
+	d, err = conn.Read(data)
+	if err != nil {
+		fmt.Println(err)
+	}
+	res = data[:d]
+	fmt.Printf("Message from Master %s", string(res))
 	return nil
 }
