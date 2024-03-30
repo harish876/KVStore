@@ -12,16 +12,22 @@ import (
 )
 
 type ReplicationConfig struct {
+	Replicas          []Replicas
 	ReplicationId     string
 	ReplicationOffset int
 }
 
+type Replicas struct {
+	Port int
+}
+
 type RedisArgs struct {
-	ServerPort        int
-	MasterHost        string
-	MasterPort        int
-	Role              string
-	ReplicationConfig ReplicationConfig
+	ServerPort         int
+	MasterHost         string
+	MasterPort         int
+	Role               string
+	ReplicationConfig  ReplicationConfig
+	ReplicationChannel chan string
 }
 
 var (
@@ -56,21 +62,27 @@ func ParseArgs() RedisArgs {
 		masterHost = masterDetails[0]
 	}
 
+	var replicationConfig ReplicationConfig
+	var replicationChan chan string
 	if port == masterPort {
 		role = MASTER_ROLE
+		replicationChan = make(chan string)
+		replicationConfig = ReplicationConfig{
+			Replicas:          make([]Replicas, 0), //revisit
+			ReplicationId:     GenerateReplicationId(),
+			ReplicationOffset: 0,
+		}
 	} else {
 		role = SLAVE_ROLE
 	}
 
 	return RedisArgs{
-		ServerPort: port,
-		MasterPort: masterPort,
-		MasterHost: masterHost,
-		Role:       role,
-		ReplicationConfig: ReplicationConfig{
-			ReplicationId:     GenerateReplicationId(),
-			ReplicationOffset: 0,
-		},
+		ServerPort:         port,
+		MasterPort:         masterPort,
+		MasterHost:         masterHost,
+		Role:               role,
+		ReplicationConfig:  replicationConfig,
+		ReplicationChannel: replicationChan,
 	}
 }
 

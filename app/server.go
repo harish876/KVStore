@@ -6,7 +6,6 @@ import (
 	"net"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/codecrafters-io/redis-starter-go/pkg/args"
 	"github.com/codecrafters-io/redis-starter-go/pkg/parser"
@@ -30,14 +29,17 @@ func main() {
 		conn, err := listener.Accept()
 		if err != nil {
 			fmt.Println("Error accepting connection: ", err.Error())
-			os.Exit(1)
+			break
 		}
-		go handleClient(conn, store, glbArgs)
+		go handleClient(conn, store, &glbArgs)
 	}
+	close(glbArgs.ReplicationChannel)
+	os.Exit(1)
 }
 
-func handleClient(conn net.Conn, s *store.Store, glb args.RedisArgs) {
+func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 	defer conn.Close()
+	go replication.ReplicateWrite(conn, glb)
 	for {
 		buffer := make([]byte, 1024)
 		recievedBytes, err := conn.Read(buffer)
@@ -49,7 +51,6 @@ func handleClient(conn net.Conn, s *store.Store, glb args.RedisArgs) {
 		var response string
 		switch parsedMessage.Method {
 		case "ping":
-			fmt.Println("Error here")
 			response = parser.EncodeSimpleString("PONG")
 			fmt.Printf("Response is %s ", response)
 
@@ -104,6 +105,12 @@ func handleClient(conn net.Conn, s *store.Store, glb args.RedisArgs) {
 
 		case "replconf":
 			if glb.Role == args.MASTER_ROLE {
+				if parsedMessage.MessagesLength == 2 && parsedMessage.Messages[0] == "listening-port" {
+					lport, err := strconv.Atoi(parsedMessage.Messages[1])
+					if err == nil {
+						glb.ReplicationConfig.Replicas = append(glb.ReplicationConfig.Replicas, args.Replicas{Port: lport})
+					}
+				}
 				response = parser.EncodeSimpleString("OK")
 			} else {
 				response = ""
@@ -128,8 +135,11 @@ func handleClient(conn net.Conn, s *store.Store, glb args.RedisArgs) {
 			fmt.Println("Error writing response: ", err.Error())
 			break
 		}
-		if glb.Role == args.MASTER_ROLE && strings.Contains(response, "FULLRESYNC") {
+		if glb.Role == args.MASTER_ROLE && parsedMessage.Method == "psync" {
 			replication.SendRdbMessage(conn, glb)
+		}
+		if glb.Role == args.MASTER_ROLE && parsedMessage.Method == "set" {
+			glb.ReplicationChannel <- response
 		}
 		fmt.Printf("Number of Bytes sent : %d\n", sentBytes)
 	}
