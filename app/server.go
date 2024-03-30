@@ -84,7 +84,12 @@ func handleClient(conn net.Conn, s *store.Store, glb args.RedisArgs) {
 
 		case "info":
 			if parsedMessage.MessagesLength >= 1 {
-				response = parser.EncodeResponse([]string{fmt.Sprintf("role:%s", glb.Role)})
+				response = parser.EncodeResponse(
+					[]string{
+						parser.GetLablelledMessage("role", glb.Role),
+						parser.GetLablelledMessage("master_replid", "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb"),
+						parser.GetLablelledMessage("master_repl_offset", "0"),
+					})
 			} else {
 				response = parser.BULK_NULL_STRING
 			}

@@ -103,3 +103,7 @@ func EncodeRequest(messages []string) string {
 func EncodeAck(msg string) string {
 	return fmt.Sprintf("+%s\r\n", msg)
 }
+
+func GetLablelledMessage(label, value string) string {
+	return fmt.Sprintf("%s:%s", label, value)
+}
