@@ -54,20 +54,20 @@ func HandleHandShake(glb args.RedisArgs) error {
 
 	//Replf Conf Message
 	SendReplConfMessage(conn, glb)
-	// data = make([]byte, 1024)
-	// d, err = conn.Read(data)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
-	// res = data[:d]
-	// fmt.Printf("Message from Master Replconf %s", string(res))
+	data = make([]byte, 1024)
+	d, err = conn.Read(data)
+	if err != nil {
+		fmt.Println(err)
+	}
+	res = data[:d]
+	fmt.Printf("Message from Master Replconf-1 %s", string(res))
 
-	// data = make([]byte, 1024)
-	// d, err = conn.Read(data)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
-	// res = data[:d]
-	// fmt.Printf("Message from Master Replconf %s", string(res))
+	data = make([]byte, 1024)
+	d, err = conn.Read(data)
+	if err != nil {
+		fmt.Println(err)
+	}
+	res = data[:d]
+	fmt.Printf("Message from Master Replconf-2 %s", string(res))
 	return nil
 }
