@@ -22,5 +22,10 @@ func SendRdbMessage(conn net.Conn, glb *args.RedisArgs) {
 func ReplicateWrite(conn net.Conn, glb *args.RedisArgs) {
 	for msg := range glb.ReplicationChannel {
 		fmt.Printf("Message Recieved from Channel %s", msg)
+		sentBytes, err := conn.Write([]byte(msg))
+		if err != nil {
+			fmt.Println("Error writing response: ", err.Error())
+		}
+		fmt.Printf("Sent Byte count of SET command %d", sentBytes)
 	}
 }

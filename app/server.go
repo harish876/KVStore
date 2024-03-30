@@ -47,6 +47,7 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 			break
 		}
 		fmt.Printf("Recieved Bytes in request: %d\n", recievedBytes)
+		request := string(buffer[:recievedBytes])
 		parsedMessage, _ := parser.Decode(buffer[:recievedBytes])
 		var response string
 		switch parsedMessage.Method {
@@ -139,7 +140,7 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 			replication.SendRdbMessage(conn, glb)
 		}
 		if glb.Role == args.MASTER_ROLE && parsedMessage.Method == "set" {
-			glb.ReplicationChannel <- response
+			glb.ReplicationChannel <- request
 		}
 		fmt.Printf("Number of Bytes sent : %d\n", sentBytes)
 	}
