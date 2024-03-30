@@ -21,54 +21,32 @@ func ConnectToMaster(glb args.RedisArgs) (net.Conn, error) {
 	}
 	return conn, nil
 }
-
-// Fire and Forget now, Listen to the message!
 func PingMaster(conn net.Conn, glb args.RedisArgs) error {
-
+	defer conn.Close()
 	_, err := conn.Write([]byte(parser.EncodeRespArray([]string{"PING"})))
 	if err != nil {
 		return fmt.Errorf("error sending PING message to master: %v", err)
 	}
-	// buffer := make([]byte, 1024)
-	// recievedBytes, err := conn.Read(buffer)
-	// if err != nil {
-	// 	return err
-	// }
-	// fmt.Printf("Recieved Bytes in request: %d\n", recievedBytes)
-	// parsedMessage, _ := parser.Decode(buffer[:recievedBytes])
-	// fmt.Println("Response to Ping Command", parsedMessage)
 	return nil
 }
 
-func SendReplConfMessage(conn net.Conn, glb args.RedisArgs) error {
-	_, err := conn.Write([]byte(parser.EncodeRespArray([]string{"REPLCONF", "listening-port", fmt.Sprintf("%d", glb.ServerPort)})))
-	if err != nil {
-		return fmt.Errorf("error sending REPLCONF listening port message to master: %v", err)
-	}
-	_, err = conn.Write([]byte(parser.EncodeRespArray([]string{"REPLCONF", "capa", "psync2"})))
-	if err != nil {
-		return fmt.Errorf("error sending REPLCONF capa psync2 message to master: %v", err)
-	}
-	return nil
-}
-
-// // what
-// func CreateReplClient(glb args.RedisArgs) error {
-// 	conn, err := ConnectToMaster(glb)
-// 	if conn == nil {
-// 		return nil
-// 	}
+// func SendReplConfMessage(conn net.Conn, glb args.RedisArgs) error {
+// 	_, err := conn.Write([]byte(parser.EncodeRespArray([]string{"REPLCONF", "listening-port", fmt.Sprintf("%d", glb.ServerPort)})))
 // 	if err != nil {
-// 		return err
+// 		return fmt.Errorf("error sending REPLCONF listening port message to master: %v", err)
 // 	}
-// 	defer conn.Close()
-// 	err = PingMaster(conn, glb)
+// 	_, err = conn.Write([]byte(parser.EncodeRespArray([]string{"REPLCONF", "capa", "psync2"})))
 // 	if err != nil {
-// 		return err
-// 	}
-// 	err = SendReplConfMessage(conn, glb)
-// 	if err != nil {
-// 		return err
+// 		return fmt.Errorf("error sending REPLCONF capa psync2 message to master: %v", err)
 // 	}
 // 	return nil
 // }
+
+// buffer := make([]byte, 1024)
+// recievedBytes, err := conn.Read(buffer)
+// if err != nil {
+// 	return err
+// }
+// fmt.Printf("Recieved Bytes in request: %d\n", recievedBytes)
+// parsedMessage, _ := parser.Decode(buffer[:recievedBytes])
+// fmt.Println("Response to Ping Command", parsedMessage)
