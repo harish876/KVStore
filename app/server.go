@@ -83,7 +83,7 @@ func handleClient(conn net.Conn, s *store.Store, glb args.RedisArgs) {
 			fmt.Printf("Response is %s ", response)
 
 		case "info":
-			if parsedMessage.MessagesLength >= 1 {
+			if parsedMessage.MessagesLength >= 1 && parsedMessage.Messages[0] == "replication" {
 				response = parser.EncodeResponse(
 					[]string{
 						parser.GetLablelledMessage("role", glb.Role),

@@ -67,7 +67,11 @@ func TestParserSetExpiry(t *testing.T) {
 
 func TestParserInfo(t *testing.T) {
 	requestMessage := []string{"info", "replication"}
-	responseMessage := parser.EncodeResponse([]string{"role:master"})
+	responseMessage := parser.EncodeResponse([]string{
+		parser.GetLablelledMessage("role", "master"),
+		parser.GetLablelledMessage("master_replid", "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb"),
+		parser.GetLablelledMessage("master_repl_offset", "0"),
+	})
 	input := parser.EncodeRequest(requestMessage)
 	msg, err := parser.Decode([]byte(input))
 	if err != nil {
