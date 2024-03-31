@@ -1,9 +1,12 @@
 package store
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 var (
-	DEFAULT_TTL = 12000000 //120 seconds
+	DEFAULT_TTL = 120000 //120 seconds
 )
 
 type RedisMapValue struct {
@@ -11,14 +14,12 @@ type RedisMapValue struct {
 	InsertedTime time.Time
 }
 type Store struct {
-	RedisMap        map[string]RedisMapValue
-	EvictionChannel chan<- string
+	RedisMap map[string]RedisMapValue
 }
 
 func New() *Store {
 	return &Store{
-		RedisMap:        make(map[string]RedisMapValue),
-		EvictionChannel: make(chan<- string),
+		RedisMap: make(map[string]RedisMapValue),
 	}
 }
 
@@ -47,8 +48,9 @@ func (s *Store) Get(key string) (string, bool) {
 		return "", false
 	}
 }
-
-// recieve a message from a value in the map
-func Evictor() {
-
+func (s *Store) PrintMap() {
+	fmt.Println("Map Contents:")
+	for key, value := range s.RedisMap {
+		fmt.Printf("Key: %s  Value: %s", key, value)
+	}
 }
