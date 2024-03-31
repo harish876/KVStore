@@ -15,31 +15,19 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/pkg/store"
 )
 
-type Server struct {
-	Store *store.Store
-	Args  args.RedisArgs
-}
-
-func NewServer() Server {
-	args := args.ParseArgs()
-	return Server{
-		Store: store.New(),
-		Args:  args,
-	}
-}
-
 func main() {
-	s := NewServer()
-	fmt.Println(s.Args)
-	listener, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", s.Args.ServerPort))
+	store := store.New()
+	gArgs := args.ParseArgs()
+	fmt.Println(gArgs)
+	listener, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", gArgs.ServerPort))
 	if err != nil {
-		fmt.Printf("Failed to bind to port %d\n", s.Args.ServerPort)
+		fmt.Printf("Failed to bind to port %d\n", gArgs.ServerPort)
 		os.Exit(1)
 	}
-	if s.Args.Role == args.SLAVE_ROLE {
+	if gArgs.Role == args.SLAVE_ROLE {
 		var wg sync.WaitGroup
 		wg.Add(1)
-		mConn, err := replication.HandleHandShakeWithMaster(&wg, s.Args)
+		mConn, err := replication.HandleHandShakeWithMaster(&wg, gArgs)
 		if err != nil {
 			log.Fatalf("Error at Handle Hand Shake with master %v", err)
 		}
@@ -53,15 +41,15 @@ func main() {
 			fmt.Println("Error accepting connection: ", err.Error())
 			break
 		}
-		go s.handleClient(conn)
+		go handleClient(conn, gArgs, store)
 	}
-	close(s.Args.ReplicationChannel)
+	close(gArgs.ReplicationChannel)
 	os.Exit(1)
 }
 
-func (s *Server) handleClient(conn net.Conn) {
+func handleClient(conn net.Conn, gArgs args.RedisArgs, s *store.Store) {
 	defer conn.Close()
-	go replication.ReplicateWrite(s.Args)
+	go replication.ReplicateWrite(gArgs)
 	for {
 		buffer := make([]byte, 1024)
 		recievedBytes, err := conn.Read(buffer)
@@ -83,18 +71,18 @@ func (s *Server) handleClient(conn net.Conn) {
 			fmt.Printf("Response is %s ", response)
 
 		case "set":
-			fmt.Printf("SET Message for %s %q\n", s.Args.Role, parsedMessage.Messages)
+			fmt.Printf("SET Message for %s %q\n", gArgs.Role, parsedMessage.Messages)
 			if parsedMessage.MessagesLength == 2 {
 				key := parsedMessage.Messages[0]
 				value := parsedMessage.Messages[1]
-				s.Store.Set(key, value)
+				s.Set(key, value)
 				response = parser.EncodeSimpleString("OK")
 
 			} else if parsedMessage.MessagesLength == 4 {
 				key := parsedMessage.Messages[0]
 				value := parsedMessage.Messages[1]
 				ttl, _ := strconv.Atoi(parsedMessage.Messages[3])
-				s.Store.SetWithTTL(key, value, ttl)
+				s.SetWithTTL(key, value, ttl)
 				response = parser.EncodeSimpleString("OK")
 
 			} else {
@@ -105,7 +93,7 @@ func (s *Server) handleClient(conn net.Conn) {
 		case "get":
 			if parsedMessage.MessagesLength >= 1 {
 				key := parsedMessage.Messages[0]
-				if value, ok := s.Store.Get(key); !ok {
+				if value, ok := s.Get(key); !ok {
 					response = parser.BULK_NULL_STRING
 				} else {
 					response = parser.EncodeRespString([]string{value})
@@ -118,9 +106,9 @@ func (s *Server) handleClient(conn net.Conn) {
 		case "info":
 			if parsedMessage.MessagesLength >= 1 && parsedMessage.Messages[0] == "replication" {
 				var infoParams []string
-				if s.Args.Role == args.MASTER_ROLE {
+				if gArgs.Role == args.MASTER_ROLE {
 					/* Test Case issue when building a single string */
-					infoParams = append(infoParams, fmt.Sprintf("role:%s\r\nmaster_replid:%s\r\nmaster_repl_offset:%d", s.Args.Role, s.Args.ReplicationConfig.ReplicationId, s.Args.ReplicationConfig.ReplicationOffset))
+					infoParams = append(infoParams, fmt.Sprintf("role:%s\r\nmaster_replid:%s\r\nmaster_repl_offset:%d", gArgs.Role, gArgs.ReplicationConfig.ReplicationId, gArgs.ReplicationConfig.ReplicationOffset))
 				} else {
 					infoParams = append(infoParams, parser.GetLablelledMessage("role", args.SLAVE_ROLE))
 				}
@@ -131,12 +119,12 @@ func (s *Server) handleClient(conn net.Conn) {
 			fmt.Printf("Response is %s ", []byte(response))
 
 		case "replconf":
-			if s.Args.Role == args.MASTER_ROLE {
+			if gArgs.Role == args.MASTER_ROLE {
 				if parsedMessage.MessagesLength == 2 && parsedMessage.Messages[0] == "listening-port" {
 					lport, err := strconv.Atoi(parsedMessage.Messages[1])
 					if err == nil {
 						fmt.Println("Incoming Replica Connection is", fmt.Sprintf("0.0.0.0:%d", lport))
-						s.Args.ReplicationConfig.Replicas = append(s.Args.ReplicationConfig.Replicas, args.Replicas{Conn: conn})
+						gArgs.ReplicationConfig.Replicas = append(gArgs.ReplicationConfig.Replicas, args.Replicas{Conn: conn})
 					}
 				}
 				response = parser.EncodeSimpleString("OK")
@@ -146,8 +134,8 @@ func (s *Server) handleClient(conn net.Conn) {
 			fmt.Printf("Response for replconf is %s ", []byte(response))
 
 		case "psync":
-			if s.Args.Role == args.MASTER_ROLE {
-				response = parser.EncodeSimpleString(fmt.Sprintf("FULLRESYNC %s %d", s.Args.ReplicationConfig.ReplicationId, s.Args.ReplicationConfig.ReplicationOffset))
+			if gArgs.Role == args.MASTER_ROLE {
+				response = parser.EncodeSimpleString(fmt.Sprintf("FULLRESYNC %s %d", gArgs.ReplicationConfig.ReplicationId, gArgs.ReplicationConfig.ReplicationOffset))
 			} else {
 				response = ""
 			}
@@ -163,11 +151,11 @@ func (s *Server) handleClient(conn net.Conn) {
 			fmt.Println("Error writing response: ", err.Error())
 			break
 		}
-		if s.Args.Role == args.MASTER_ROLE && parsedMessage.Method == "psync" {
-			replication.SendRdbMessage(conn, s.Args)
+		if gArgs.Role == args.MASTER_ROLE && parsedMessage.Method == "psync" {
+			replication.SendRdbMessage(conn, gArgs)
 		}
-		if s.Args.Role == args.MASTER_ROLE && parsedMessage.Method == "set" {
-			s.Args.ReplicationChannel <- request
+		if gArgs.Role == args.MASTER_ROLE && parsedMessage.Method == "set" {
+			gArgs.ReplicationChannel <- request
 		}
 		fmt.Printf("Number of Bytes sent : %d\n", sentBytes)
 	}
