@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/codecrafters-io/redis-starter-go/harish-work/pkg/parser"
+	"github.com/codecrafters-io/redis-starter-go/pkg/parser"
 )
 
 func TestParserEcho(t *testing.T) {

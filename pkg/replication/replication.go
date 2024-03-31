@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/codecrafters-io/redis-starter-go/harish-work/pkg/args"
-	"github.com/codecrafters-io/redis-starter-go/harish-work/pkg/parser"
+	"github.com/codecrafters-io/redis-starter-go/pkg/args"
+	"github.com/codecrafters-io/redis-starter-go/pkg/parser"
 )
 
 func ConnectToMaster(glb args.RedisArgs) (net.Conn, error) {
