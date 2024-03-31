@@ -3,7 +3,6 @@ package replication
 import (
 	"fmt"
 	"net"
-	"sync"
 
 	"github.com/codecrafters-io/redis-starter-go/pkg/args"
 	"github.com/codecrafters-io/redis-starter-go/pkg/parser"
@@ -42,13 +41,12 @@ func SendPsyncMessage(conn net.Conn, glb args.RedisArgs) error {
 	}
 	return nil
 }
-func HandleHandShakeWithMaster(wg *sync.WaitGroup, glb args.RedisArgs) (net.Conn, error) {
+func HandleHandShakeWithMaster(glb args.RedisArgs) (net.Conn, error) {
 	conn, err := ConnectToMaster(glb)
 	if err != nil {
 		fmt.Printf("Failed to connect to master %v", err)
 		return nil, err
 	}
-	defer wg.Done()
 	PingMaster(conn, glb)
 	//Ping command read
 	data := make([]byte, 1024)
