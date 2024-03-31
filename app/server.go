@@ -59,6 +59,7 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 		buffer := make([]byte, 1024)
 		recievedBytes, err := conn.Read(buffer)
 		if err == io.EOF || recievedBytes == 0 {
+			fmt.Printf("Received IOF Error for %s", glb.Role)
 			break
 		}
 		fmt.Printf("Recieved Bytes in request: %d\n", recievedBytes)
@@ -133,7 +134,7 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 				}
 				response = parser.EncodeSimpleString("OK")
 			} else {
-				response = ""
+				response = parser.BULK_NULL_STRING
 			}
 			fmt.Printf("Response for replconf is %s ", []byte(response))
 
@@ -142,7 +143,7 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 				response = parser.EncodeSimpleString(fmt.Sprintf("FULLRESYNC %s %d", glb.ReplicationConfig.ReplicationId, glb.ReplicationConfig.ReplicationOffset))
 				glb.ReplicationConfig.Replicas = append(glb.ReplicationConfig.Replicas, args.Replicas{Conn: conn})
 			} else {
-				response = ""
+				response = parser.BULK_NULL_STRING
 			}
 			fmt.Printf("Response for psync is %s ", []byte(response))
 
