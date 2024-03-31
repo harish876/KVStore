@@ -9,7 +9,6 @@ import (
 )
 
 func ConnectToMaster(glb args.RedisArgs) (net.Conn, error) {
-	fmt.Println(glb.MasterHost, glb.ServerPort, glb.Role, glb.MasterPort)
 	master := fmt.Sprintf("%s:%d", glb.MasterHost, glb.MasterPort)
 	conn, err := net.Dial("tcp", master)
 	if err != nil {

@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/codecrafters-io/redis-starter-go/pkg/args"
 	"github.com/codecrafters-io/redis-starter-go/pkg/parser"
@@ -34,6 +35,7 @@ func main() {
 	}
 	for {
 		conn, err := listener.Accept()
+		fmt.Println("Connected to: ", conn.RemoteAddr().String())
 		if err != nil {
 			fmt.Println("Error accepting connection: ", err.Error())
 			break
@@ -121,7 +123,6 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 					lport, err := strconv.Atoi(parsedMessage.Messages[1])
 					if err == nil {
 						fmt.Println("Incoming Replica Connection is", fmt.Sprintf("0.0.0.0:%d", lport))
-						glb.ReplicationConfig.Replicas = append(glb.ReplicationConfig.Replicas, args.Replicas{Conn: conn})
 					}
 				}
 				response = parser.EncodeSimpleString("OK")
@@ -133,6 +134,9 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 		case "psync":
 			if glb.Role == args.MASTER_ROLE {
 				response = parser.EncodeSimpleString(fmt.Sprintf("FULLRESYNC %s %d", glb.ReplicationConfig.ReplicationId, glb.ReplicationConfig.ReplicationOffset))
+				//glb.ReplicationConfig.ReplicaLock.Lock()
+				glb.ReplicationConfig.Replicas = append(glb.ReplicationConfig.Replicas, args.Replicas{Conn: conn})
+				//glb.ReplicationConfig.ReplicaLock.Unlock()
 			} else {
 				response = ""
 			}
@@ -149,6 +153,7 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 			break
 		}
 		if glb.Role == args.MASTER_ROLE && parsedMessage.Method == "psync" {
+			time.Sleep(200 * time.Millisecond) // idk why
 			replication.SendRdbMessage(conn, glb)
 		}
 		if glb.Role == args.MASTER_ROLE && parsedMessage.Method == "set" {

@@ -16,6 +16,7 @@ type ReplicationConfig struct {
 	Replicas          []Replicas
 	ReplicationId     string
 	ReplicationOffset int
+	// ReplicaLock       sync.Mutex
 }
 
 type Replicas struct {

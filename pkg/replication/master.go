@@ -21,7 +21,6 @@ func SendRdbMessage(conn net.Conn, glb *args.RedisArgs) {
 
 func ReplicateWrite(glb *args.RedisArgs) {
 	for msg := range glb.ReplicationChannel {
-		// fmt.Printf("Message Recieved from Channel %s", msg)
 		for _, rConn := range glb.ReplicationConfig.Replicas {
 			fmt.Println("The Replica url is ", rConn.Conn.LocalAddr().String())
 			sentBytes, err := rConn.Conn.Write([]byte(msg))
