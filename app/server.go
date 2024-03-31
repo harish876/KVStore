@@ -37,7 +37,7 @@ func main() {
 		wg.Add(1)
 		mConn, err := replication.HandleHandShakeWithMaster(&wg, glbArgs)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("Error at Handle Hand Shake with master %v", err)
 		}
 		wg.Wait()
 		go s.handleClient(mConn)
