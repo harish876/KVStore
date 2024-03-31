@@ -35,7 +35,7 @@ func main() {
 	if glbArgs.Role == args.SLAVE_ROLE {
 		var wg sync.WaitGroup
 		wg.Add(1)
-		mConn, err := replication.HandleHandShakeWithMaster(glbArgs)
+		mConn, err := replication.HandleHandShakeWithMaster(&wg, glbArgs)
 		if err != nil {
 			log.Fatal(err)
 		}
