@@ -28,7 +28,9 @@ func main() {
 			fmt.Printf("Failed to connect to master: %v", err)
 
 		}
-		go handleClient(mConn, store, &glbArgs)
+		if mConn != nil {
+			go handleClient(mConn, store, &glbArgs)
+		}
 	}
 	for {
 		conn, err := listener.Accept()
