@@ -32,7 +32,7 @@ func main() {
 			fmt.Printf("FAILED TO CONNECT TO MASTER: %v", err)
 
 		}
-		wg.Done()
+		wg.Wait()
 		if mConn != nil {
 			fmt.Println("Replica connected to master!...")
 			go handleClient(mConn, store, &glbArgs)
