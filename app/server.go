@@ -27,9 +27,9 @@ func main() {
 		Args:  &glbArgs,
 	}
 
-	listener, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", glbArgs.MasterPort))
+	listener, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", glbArgs.ServerPort))
 	if err != nil {
-		fmt.Printf("Failed to bind to port %d\n", glbArgs.MasterPort)
+		fmt.Printf("Failed to bind to port %d\n", glbArgs.ServerPort)
 		os.Exit(1)
 	}
 	if glbArgs.Role == args.SLAVE_ROLE {
