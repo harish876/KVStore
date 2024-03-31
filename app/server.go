@@ -17,14 +17,14 @@ import (
 
 type Server struct {
 	Store *store.Store
-	Args  *args.RedisArgs
+	Args  args.RedisArgs
 }
 
 func NewServer() Server {
 	args := args.ParseArgs()
 	return Server{
 		Store: store.New(),
-		Args:  &args,
+		Args:  args,
 	}
 }
 
@@ -39,7 +39,7 @@ func main() {
 	if s.Args.Role == args.SLAVE_ROLE {
 		var wg sync.WaitGroup
 		wg.Add(1)
-		mConn, err := replication.HandleHandShakeWithMaster(&wg, *s.Args)
+		mConn, err := replication.HandleHandShakeWithMaster(&wg, s.Args)
 		if err != nil {
 			log.Fatalf("Error at Handle Hand Shake with master %v", err)
 		}
