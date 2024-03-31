@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"strconv"
@@ -56,12 +57,11 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 	}
 	for {
 		buffer := make([]byte, 1024)
-		recievedBytes, _ := conn.Read(buffer)
-		// if err == io.EOF || recievedBytes == 0 {
-		// 	fmt.Printf("Received IOF Error for %s\n", glb.Role)
-		// 	break
-		// }
-
+		recievedBytes, err := conn.Read(buffer)
+		if err == io.EOF || recievedBytes == 0 {
+			fmt.Printf("Received IOF Error for %s\n", glb.Role)
+			break
+		}
 		fmt.Printf("Recieved Bytes in request: %d\n", recievedBytes)
 		request := string(buffer[:recievedBytes])
 		parsedMessage, _ := parser.Decode(buffer[:recievedBytes])
@@ -150,6 +150,7 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 		default:
 			fmt.Printf("Buffer: %s\n", buffer[:recievedBytes])
 			fmt.Printf("Parsed Message: %s\n", parsedMessage.Messages)
+			response = parser.BULK_NULL_STRING
 		}
 
 		sentBytes, err := conn.Write([]byte(response))
