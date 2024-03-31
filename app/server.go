@@ -30,8 +30,7 @@ func main() {
 
 		}
 		if mConn != nil {
-			fmt.Println("Handling Comms with Master: ", mConn.LocalAddr().String())
-			fmt.Println("Connected to master!...")
+			fmt.Println("Replica connected to master!...")
 			go handleClient(mConn, store, &glbArgs)
 		}
 	}
