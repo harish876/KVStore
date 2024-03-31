@@ -30,6 +30,7 @@ func main() {
 
 		}
 		if mConn != nil {
+			fmt.Println("Handling Comms with Master: ", mConn.LocalAddr().String())
 			go handleClient(mConn, store, &glbArgs)
 		}
 	}
