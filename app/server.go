@@ -20,22 +20,26 @@ type Server struct {
 	Args  *args.RedisArgs
 }
 
-func main() {
-	glbArgs := args.ParseArgs()
-	s := Server{
+func NewServer() Server {
+	args := args.ParseArgs()
+	return Server{
 		Store: store.New(),
-		Args:  &glbArgs,
+		Args:  &args,
 	}
+}
 
-	listener, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", glbArgs.ServerPort))
+func main() {
+	s := NewServer()
+	fmt.Println(s.Args)
+	listener, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", s.Args.ServerPort))
 	if err != nil {
-		fmt.Printf("Failed to bind to port %d\n", glbArgs.ServerPort)
+		fmt.Printf("Failed to bind to port %d\n", s.Args.ServerPort)
 		os.Exit(1)
 	}
-	if glbArgs.Role == args.SLAVE_ROLE {
+	if s.Args.Role == args.SLAVE_ROLE {
 		var wg sync.WaitGroup
 		wg.Add(1)
-		mConn, err := replication.HandleHandShakeWithMaster(&wg, glbArgs)
+		mConn, err := replication.HandleHandShakeWithMaster(&wg, *s.Args)
 		if err != nil {
 			log.Fatalf("Error at Handle Hand Shake with master %v", err)
 		}
@@ -51,7 +55,7 @@ func main() {
 		}
 		go s.handleClient(conn)
 	}
-	close(glbArgs.ReplicationChannel)
+	close(s.Args.ReplicationChannel)
 	os.Exit(1)
 }
 
