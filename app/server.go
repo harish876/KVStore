@@ -40,7 +40,8 @@ func main() {
 			log.Fatalf("Error at Handle Hand Shake with master %v", err)
 		}
 		wg.Wait()
-		go s.handleClient(mConn)
+		_ = mConn
+		//go s.handleClient(mConn)
 	}
 	for {
 		conn, err := listener.Accept()
