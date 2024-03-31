@@ -23,7 +23,12 @@ func main() {
 		os.Exit(1)
 	}
 	if glbArgs.Role == args.SLAVE_ROLE {
-		replication.HandleHandShakeWithMaster(glbArgs)
+		mConn, err := replication.HandleHandShakeWithMaster(glbArgs)
+		if err != nil {
+			fmt.Printf("Failed to connect to master: %v", err)
+
+		}
+		go handleClient(mConn, store, &glbArgs)
 	}
 	for {
 		conn, err := listener.Accept()
