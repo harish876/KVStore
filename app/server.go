@@ -80,6 +80,7 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 				key := parsedMessage.Messages[0]
 				value := parsedMessage.Messages[1]
 				s.Set(key, value)
+				fmt.Println("Here")
 				s.PrintMap()
 				response = parser.EncodeSimpleString("OK")
 			} else if parsedMessage.MessagesLength == 4 {
