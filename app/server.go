@@ -7,7 +7,6 @@ import (
 	"os"
 	"strconv"
 	"sync"
-	"time"
 
 	"github.com/codecrafters-io/redis-starter-go/pkg/args"
 	"github.com/codecrafters-io/redis-starter-go/pkg/parser"
@@ -158,7 +157,6 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 			break
 		}
 		if glb.Role == args.MASTER_ROLE && parsedMessage.Method == "psync" {
-			time.Sleep(200 * time.Millisecond) // idk why
 			replication.SendRdbMessage(conn, glb)
 		}
 		if glb.Role == args.MASTER_ROLE && parsedMessage.Method == "set" {
