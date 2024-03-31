@@ -8,7 +8,7 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/pkg/args"
 )
 
-func SendRdbMessage(conn net.Conn, glb args.RedisArgs) {
+func SendRdbMessage(conn net.Conn, glb *args.RedisArgs) {
 	base64String := "UkVESVMwMDEx+glyZWRpcy12ZXIFNy4yLjD6CnJlZGlzLWJpdHPAQPoFY3RpbWXCbQi8ZfoIdXNlZC1tZW3CsMQQAPoIYW9mLWJhc2XAAP/wbjv+wP9aog=="
 	response, _ := base64.StdEncoding.DecodeString(base64String)
 	stringResponse := string(response)
@@ -19,7 +19,7 @@ func SendRdbMessage(conn net.Conn, glb args.RedisArgs) {
 	fmt.Printf("Sent Byte count of RDB message %d\n", sentBytes)
 }
 
-func ReplicateWrite(glb args.RedisArgs) {
+func ReplicateWrite(glb *args.RedisArgs) {
 	for msg := range glb.ReplicationChannel {
 		// fmt.Printf("Message Recieved from Channel %s", msg)
 		for _, rConn := range glb.ReplicationConfig.Replicas {
