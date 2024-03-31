@@ -82,7 +82,6 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 				value := parsedMessage.Messages[1]
 				s.Set(key, value)
 				response = parser.EncodeSimpleString("OK")
-
 			} else if parsedMessage.MessagesLength == 4 {
 				key := parsedMessage.Messages[0]
 				value := parsedMessage.Messages[1]
@@ -96,6 +95,7 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 			fmt.Printf("\nResponse is %s \n", response)
 
 		case "get":
+			fmt.Printf("GET Message for %s %q\n", glb.Role, parsedMessage.Messages)
 			if parsedMessage.MessagesLength >= 1 {
 				key := parsedMessage.Messages[0]
 				if value, ok := s.Get(key); !ok {
@@ -112,7 +112,6 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 			if parsedMessage.MessagesLength >= 1 && parsedMessage.Messages[0] == "replication" {
 				var infoParams []string
 				if glb.Role == args.MASTER_ROLE {
-					/* Test Case issue when building a single string */
 					infoParams = append(infoParams, fmt.Sprintf("role:%s\r\nmaster_replid:%s\r\nmaster_repl_offset:%d", glb.Role, glb.ReplicationConfig.ReplicationId, glb.ReplicationConfig.ReplicationOffset))
 				} else {
 					infoParams = append(infoParams, parser.GetLablelledMessage("role", args.SLAVE_ROLE))
