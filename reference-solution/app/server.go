@@ -1,3 +1,7 @@
+/*
+ * @author https://github.com/yash7xm
+ */
+
 package main
 
 import (
