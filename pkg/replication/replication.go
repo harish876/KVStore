@@ -86,14 +86,22 @@ func HandleHandShakeWithMaster(glb args.RedisArgs) (net.Conn, error) {
 	res = data[:d]
 	fmt.Printf("Message from Master Psync %s", string(res))
 
-	//??
+	//RDB Stuff
 	data = make([]byte, 1024)
 	d, err = conn.Read(data)
 	if err != nil {
 		fmt.Println(err)
 	}
 	res = data[:d]
-	fmt.Printf("Message from Master for Connection %s", string(res))
+	fmt.Printf("Message from Master for RDB Content %s", string(res))
+
+	data = make([]byte, 1024)
+	d, err = conn.Read(data)
+	if err != nil {
+		fmt.Println(err)
+	}
+	res = data[:d]
+	fmt.Printf("Message from Master for Connection. %s", string(res))
 
 	return conn, nil
 }
