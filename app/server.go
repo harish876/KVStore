@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"sync"
 
 	"github.com/codecrafters-io/redis-starter-go/pkg/args"
 	"github.com/codecrafters-io/redis-starter-go/pkg/parser"
@@ -32,10 +33,13 @@ func main() {
 		os.Exit(1)
 	}
 	if glbArgs.Role == args.SLAVE_ROLE {
-		mConn, err := replication.HandleHandShakeWithMaster(glbArgs)
+		var wg sync.WaitGroup
+		wg.Add(1)
+		mConn, err := replication.HandleHandShakeWithMaster(&wg, glbArgs)
 		if err != nil {
 			log.Fatal(err)
 		}
+		wg.Wait()
 		go s.handleClient(mConn)
 	}
 	for {

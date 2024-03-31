@@ -3,6 +3,7 @@ package replication
 import (
 	"fmt"
 	"net"
+	"sync"
 
 	"github.com/codecrafters-io/redis-starter-go/pkg/args"
 	"github.com/codecrafters-io/redis-starter-go/pkg/parser"
@@ -41,7 +42,7 @@ func SendPsyncMessage(conn net.Conn, glb args.RedisArgs) error {
 	}
 	return nil
 }
-func HandleHandShakeWithMaster(glb args.RedisArgs) (net.Conn, error) {
+func HandleHandShakeWithMaster(wg *sync.WaitGroup, glb args.RedisArgs) (net.Conn, error) {
 	conn, err := ConnectToMaster(glb)
 	if err != nil {
 		fmt.Printf("Failed to connect to master %v", err)
@@ -83,8 +84,28 @@ func HandleHandShakeWithMaster(glb args.RedisArgs) (net.Conn, error) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	_ = data[:d]
-	// fmt.Printf("Message from Master Psync %s", string(res)) //ignore this log
+	res = data[:d]
+	fmt.Printf("Message from Master Psync %s", string(res))
+
+	//??
+	data = make([]byte, 1024)
+	d, err = conn.Read(data)
+	if err != nil {
+		fmt.Println(err)
+	}
+	res = data[:d]
+	fmt.Printf("Message from Master %s", string(res))
+
+	//??
+	data = make([]byte, 1024)
+	d, err = conn.Read(data)
+	if err != nil {
+		fmt.Println(err)
+	}
+	res = data[:d]
+	fmt.Printf("Message from Master %s", string(res))
+
+	wg.Done()
 
 	return conn, nil
 }
