@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"net"
 	"os"
 	"strconv"
@@ -57,11 +56,12 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 	}
 	for {
 		buffer := make([]byte, 1024)
-		recievedBytes, err := conn.Read(buffer)
-		if err == io.EOF || recievedBytes == 0 {
-			fmt.Printf("Received IOF Error for %s", glb.Role)
-			break
-		}
+		recievedBytes, _ := conn.Read(buffer)
+		// if err == io.EOF || recievedBytes == 0 {
+		// 	fmt.Printf("Received IOF Error for %s\n", glb.Role)
+		// 	break
+		// }
+
 		fmt.Printf("Recieved Bytes in request: %d\n", recievedBytes)
 		request := string(buffer[:recievedBytes])
 		parsedMessage, _ := parser.Decode(buffer[:recievedBytes])
