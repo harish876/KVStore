@@ -17,7 +17,6 @@ import (
 func main() {
 	store := store.New()
 	glbArgs := args.ParseArgs()
-	fmt.Println(glbArgs)
 	listener, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", glbArgs.ServerPort))
 	if err != nil {
 		fmt.Printf("Failed to bind to port %d\n", glbArgs.ServerPort)
@@ -34,7 +33,7 @@ func main() {
 		wg.Wait()
 		if mConn != nil {
 			fmt.Println("Replica connected to master!...")
-			go handleClient(mConn, store, &glbArgs)
+			go handleClient(mConn, store, glbArgs)
 		}
 	}
 	for {
@@ -44,7 +43,7 @@ func main() {
 			fmt.Println("Error accepting connection: ", err.Error())
 			break
 		}
-		go handleClient(conn, store, &glbArgs)
+		go handleClient(conn, store, glbArgs)
 	}
 	close(glbArgs.ReplicationChannel)
 	os.Exit(1)
@@ -52,7 +51,6 @@ func main() {
 
 func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 	defer conn.Close()
-	go replication.ReplicateWrite(glb)
 	for {
 		buffer := make([]byte, 1024)
 		recievedBytes, err := conn.Read(buffer)
@@ -140,7 +138,8 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 		case "psync":
 			if glb.Role == args.MASTER_ROLE {
 				response = parser.EncodeSimpleString(fmt.Sprintf("FULLRESYNC %s %d", glb.ReplicationConfig.ReplicationId, glb.ReplicationConfig.ReplicationOffset))
-				glb.ReplicationConfig.Replicas = append(glb.ReplicationConfig.Replicas, args.Replicas{Conn: conn})
+				// glb.ReplicationConfig.Replicas = append(glb.ReplicationConfig.Replicas, args.Replicas{Conn: conn})
+				glb.ReplicationConfig.Replicas.Add(conn)
 			} else {
 				response = parser.BULK_NULL_STRING
 			}
@@ -149,7 +148,7 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 		default:
 			fmt.Printf("Buffer: %s\n", buffer[:recievedBytes])
 			fmt.Printf("Parsed Message: %s\n", parsedMessage.Messages)
-			response = parser.BULK_NULL_STRING
+			response = "-ERR unknown command\r\n"
 		}
 
 		sentBytes, err := conn.Write([]byte(response))
@@ -161,7 +160,7 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 			replication.SendRdbMessage(conn, glb)
 		}
 		if glb.Role == args.MASTER_ROLE && parsedMessage.Method == "set" {
-			glb.ReplicationChannel <- request
+			replication.PropagateMessageToReplica(request, &glb.ReplicationConfig.Replicas)
 		}
 		fmt.Printf("Number of Bytes sent : %d\n", sentBytes)
 	}

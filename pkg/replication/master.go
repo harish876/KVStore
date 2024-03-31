@@ -19,15 +19,32 @@ func SendRdbMessage(conn net.Conn, glb *args.RedisArgs) {
 	fmt.Printf("Sent Byte count of RDB message %d\n", sentBytes)
 }
 
-func ReplicateWrite(glb *args.RedisArgs) {
-	for msg := range glb.ReplicationChannel {
-		for _, rConn := range glb.ReplicationConfig.Replicas {
-			fmt.Println("The Replica url is ", rConn.Conn.LocalAddr().String())
-			sentBytes, err := rConn.Conn.Write([]byte(msg))
-			if err != nil {
-				fmt.Println("Error writing response: ", err.Error())
-			}
-			fmt.Printf("Sent Byte count of SET command %d", sentBytes)
+func PropagateMessageToReplica(request string, r *args.ConnectionPool) {
+	successfulWrites := 0
+
+	for {
+		replicaConn, err := r.Get()
+		if err != nil {
+			fmt.Println("Error getting connection from pool:", err)
+			break // Break loop if there are no available connections
+		}
+
+		_, err = replicaConn.Write([]byte(request))
+		if err != nil {
+			fmt.Println("Error writing to replica:", err)
+			r.Put(replicaConn) // Return the connection to the pool
+			break
+		}
+
+		// Increment successful writes
+		successfulWrites++
+
+		// Return the connection to the pools
+		r.Put(replicaConn)
+
+		// Check if all replicas received the command
+		if successfulWrites == len(r.Replicas) {
+			break
 		}
 	}
 }

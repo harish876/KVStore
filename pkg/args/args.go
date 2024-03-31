@@ -3,24 +3,22 @@ package args
 import (
 	"crypto/sha512"
 	"encoding/hex"
+	"errors"
 	"flag"
 	"fmt"
 	"net"
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
 type ReplicationConfig struct {
-	Replicas          []Replicas
+	Replicas          ConnectionPool
 	ReplicationId     string
 	ReplicationOffset int
 	// ReplicaLock       sync.Mutex
-}
-
-type Replicas struct {
-	Conn net.Conn
 }
 
 type RedisArgs struct {
@@ -28,7 +26,7 @@ type RedisArgs struct {
 	MasterHost         string
 	MasterPort         int
 	Role               string
-	ReplicationConfig  ReplicationConfig
+	ReplicationConfig  *ReplicationConfig
 	ReplicationChannel chan string
 }
 
@@ -39,7 +37,7 @@ var (
 	SLAVE_ROLE   = "slave"
 )
 
-func ParseArgs() RedisArgs {
+func ParseArgs() *RedisArgs {
 	currentPortPtr := flag.Int("port", DEFAULT_PORT, "Current Redis Server Port")
 	masterServerDetailsPtr := flag.String("replicaof", "localhost 6379", "Current Redis Server Port")
 	flag.Parse()
@@ -64,13 +62,13 @@ func ParseArgs() RedisArgs {
 		masterHost = masterDetails[0]
 	}
 
-	var replicationConfig ReplicationConfig
+	var replicationConfig *ReplicationConfig
 	var replicationChan chan string
 	if port == masterPort {
 		role = MASTER_ROLE
 		replicationChan = make(chan string)
-		replicationConfig = ReplicationConfig{
-			Replicas:          make([]Replicas, 0), //revisit
+		replicationConfig = &ReplicationConfig{
+			Replicas:          NewConnectionPool(),
 			ReplicationId:     GenerateReplicationId(),
 			ReplicationOffset: 0,
 		}
@@ -78,7 +76,7 @@ func ParseArgs() RedisArgs {
 		role = SLAVE_ROLE
 	}
 
-	return RedisArgs{
+	return &RedisArgs{
 		ServerPort:         port,
 		MasterPort:         masterPort,
 		MasterHost:         masterHost,
@@ -100,4 +98,40 @@ func GenerateReplicationId() string {
 	truncatedHash := hashHex[:40]
 
 	return truncatedHash
+}
+
+type ConnectionPool struct {
+	Replicas []net.Conn
+	mutex    sync.Mutex
+}
+
+func NewConnectionPool() ConnectionPool {
+	return ConnectionPool{
+		Replicas: make([]net.Conn, 0),
+	}
+}
+
+func (cp *ConnectionPool) Add(conn net.Conn) {
+	cp.mutex.Lock()
+	defer cp.mutex.Unlock()
+	cp.Replicas = append(cp.Replicas, conn)
+}
+
+// Function to get a connection from the pool
+func (cp *ConnectionPool) Get() (net.Conn, error) {
+	cp.mutex.Lock()
+	defer cp.mutex.Unlock()
+	if len(cp.Replicas) == 0 {
+		return nil, errors.New("connection pool is empty")
+	}
+	conn := cp.Replicas[0]
+	cp.Replicas = cp.Replicas[1:]
+	return conn, nil
+}
+
+// Function to return a connection to the pool
+func (cp *ConnectionPool) Put(conn net.Conn) {
+	cp.mutex.Lock()
+	defer cp.mutex.Unlock()
+	cp.Replicas = append(cp.Replicas, conn)
 }

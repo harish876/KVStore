@@ -9,7 +9,7 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/pkg/parser"
 )
 
-func ConnectToMaster(glb args.RedisArgs) (net.Conn, error) {
+func ConnectToMaster(glb *args.RedisArgs) (net.Conn, error) {
 	master := fmt.Sprintf("%s:%d", glb.MasterHost, glb.MasterPort)
 	conn, err := net.Dial("tcp", master)
 	if err != nil {
@@ -17,14 +17,14 @@ func ConnectToMaster(glb args.RedisArgs) (net.Conn, error) {
 	}
 	return conn, nil
 }
-func PingMaster(conn net.Conn, glb args.RedisArgs) error {
+func PingMaster(conn net.Conn, glb *args.RedisArgs) error {
 	_, err := conn.Write([]byte(parser.EncodeRespArray([]string{"PING"})))
 	if err != nil {
 		return fmt.Errorf("error sending PING message to master: %v", err)
 	}
 	return nil
 }
-func SendReplConfMessage(conn net.Conn, glb args.RedisArgs) error {
+func SendReplConfMessage(conn net.Conn, glb *args.RedisArgs) error {
 	_, err := conn.Write([]byte(parser.EncodeRespArray([]string{"REPLCONF", "listening-port", fmt.Sprintf("%d", glb.ServerPort)})))
 	if err != nil {
 		return fmt.Errorf("error sending REPLCONF listening port message to master: %v", err)
@@ -35,14 +35,14 @@ func SendReplConfMessage(conn net.Conn, glb args.RedisArgs) error {
 	}
 	return nil
 }
-func SendPsyncMessage(conn net.Conn, glb args.RedisArgs) error {
+func SendPsyncMessage(conn net.Conn, glb *args.RedisArgs) error {
 	_, err := conn.Write([]byte(parser.EncodeRespArray([]string{"PSYNC", "?", fmt.Sprintf("%d", -1)})))
 	if err != nil {
 		return fmt.Errorf("error sending PSYNC listening port message to master: %v", err)
 	}
 	return nil
 }
-func HandleHandShakeWithMaster(wg *sync.WaitGroup, glb args.RedisArgs) (net.Conn, error) {
+func HandleHandShakeWithMaster(wg *sync.WaitGroup, glb *args.RedisArgs) (net.Conn, error) {
 	conn, err := ConnectToMaster(glb)
 	if err != nil {
 		fmt.Printf("Failed to connect to master %v", err)
