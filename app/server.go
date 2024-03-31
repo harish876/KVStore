@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/codecrafters-io/redis-starter-go/pkg/args"
@@ -24,11 +25,14 @@ func main() {
 		os.Exit(1)
 	}
 	if glbArgs.Role == args.SLAVE_ROLE {
-		mConn, err := replication.HandleHandShakeWithMaster(glbArgs)
+		var wg sync.WaitGroup
+		wg.Add(1)
+		mConn, err := replication.HandleHandShakeWithMaster(&wg, glbArgs)
 		if err != nil {
 			fmt.Printf("FAILED TO CONNECT TO MASTER: %v", err)
 
 		}
+		wg.Done()
 		if mConn != nil {
 			fmt.Println("Replica connected to master!...")
 			go handleClient(mConn, store, &glbArgs)
