@@ -56,7 +56,8 @@ func HandleHandShakeWithMaster(wg *sync.WaitGroup, glb args.RedisArgs) (net.Conn
 		fmt.Println(err)
 	}
 	res := data[:d]
-	fmt.Printf("Message from Master Ping %s\n", string(res))
+	_ = res
+	//fmt.Printf("Message from Master Ping %s\n", string(res))
 
 	SendReplConfMessage(conn, glb)
 	//Replf Conf Listening Port Message
@@ -66,7 +67,8 @@ func HandleHandShakeWithMaster(wg *sync.WaitGroup, glb args.RedisArgs) (net.Conn
 		fmt.Println(err)
 	}
 	res = data[:d]
-	fmt.Printf("Message from Master Replconf-1 %s\n", string(res))
+	_ = res
+	//fmt.Printf("Message from Master Replconf-1 %s\n", string(res))
 
 	//Replf Conf Psync Message
 	data = make([]byte, 1024)
@@ -75,7 +77,8 @@ func HandleHandShakeWithMaster(wg *sync.WaitGroup, glb args.RedisArgs) (net.Conn
 		fmt.Println(err)
 	}
 	res = data[:d]
-	fmt.Printf("Message from Master Replconf-2 %s\n", string(res))
+	_ = res
+	//fmt.Printf("Message from Master Replconf-2 %s\n", string(res))
 
 	SendPsyncMessage(conn, glb)
 	//Replf Conf Psync Message
@@ -85,7 +88,8 @@ func HandleHandShakeWithMaster(wg *sync.WaitGroup, glb args.RedisArgs) (net.Conn
 		fmt.Println(err)
 	}
 	res = data[:d]
-	fmt.Printf("Message from Master Psync %s\n", string(res))
+	_ = res
+	//fmt.Printf("Message from Master Psync %s\n", string(res))
 
 	//RDB Stuff
 	data = make([]byte, 1024)
@@ -94,7 +98,8 @@ func HandleHandShakeWithMaster(wg *sync.WaitGroup, glb args.RedisArgs) (net.Conn
 		fmt.Println(err)
 	}
 	res = data[:d]
-	fmt.Printf("Message from Master for RDB Content %s\n", string(res))
+	_ = res
+	//fmt.Printf("Message from Master for RDB Content %s\n", string(res))
 
 	data = make([]byte, 1024)
 	d, err = conn.Read(data)
