@@ -26,7 +26,7 @@ func main() {
 	if glbArgs.Role == args.SLAVE_ROLE {
 		mConn, err := replication.HandleHandShakeWithMaster(glbArgs)
 		if err != nil {
-			fmt.Printf("Failed to connect to master: %v", err)
+			fmt.Printf("FAILED TO CONNECT TO MASTER: %v", err)
 
 		}
 		if mConn != nil {
@@ -36,7 +36,7 @@ func main() {
 	}
 	for {
 		conn, err := listener.Accept()
-		fmt.Println("Connected to: ", conn.RemoteAddr().String())
+		fmt.Println("Connected to: ", conn.LocalAddr().String())
 		if err != nil {
 			fmt.Println("Error accepting connection: ", err.Error())
 			break
@@ -49,7 +49,9 @@ func main() {
 
 func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 	defer conn.Close()
-	go replication.ReplicateWrite(glb)
+	if glb.Role == args.MASTER_ROLE {
+		go replication.ReplicateWrite(glb)
+	}
 	for {
 		buffer := make([]byte, 1024)
 		recievedBytes, err := conn.Read(buffer)
@@ -135,9 +137,7 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 		case "psync":
 			if glb.Role == args.MASTER_ROLE {
 				response = parser.EncodeSimpleString(fmt.Sprintf("FULLRESYNC %s %d", glb.ReplicationConfig.ReplicationId, glb.ReplicationConfig.ReplicationOffset))
-				//glb.ReplicationConfig.ReplicaLock.Lock()
 				glb.ReplicationConfig.Replicas = append(glb.ReplicationConfig.Replicas, args.Replicas{Conn: conn})
-				//glb.ReplicationConfig.ReplicaLock.Unlock()
 			} else {
 				response = ""
 			}
