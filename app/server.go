@@ -52,9 +52,7 @@ func main() {
 
 func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 	defer conn.Close()
-	if glb.Role == args.MASTER_ROLE {
-		go replication.ReplicateWrite(glb)
-	}
+	go replication.ReplicateWrite(glb)
 	for {
 		buffer := make([]byte, 1024)
 		recievedBytes, err := conn.Read(buffer)
