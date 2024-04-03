@@ -26,23 +26,20 @@ func PropagateMessageToReplica(request string, r *args.ConnectionPool) {
 		replicaConn, err := r.Get()
 		if err != nil {
 			fmt.Println("Error getting connection from pool:", err)
-			break // Break loop if there are no available connections
+			break
 		}
 
 		_, err = replicaConn.Write([]byte(request))
 		if err != nil {
 			fmt.Println("Error writing to replica:", err)
-			r.Put(replicaConn) // Return the connection to the pool
+			r.Put(replicaConn)
 			break
 		}
 
-		// Increment successful writes
 		successfulWrites++
 
-		// Return the connection to the pools
 		r.Put(replicaConn)
 
-		// Check if all replicas received the command
 		if successfulWrites == len(r.Replicas) {
 			break
 		}
