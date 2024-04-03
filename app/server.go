@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"os"
 	"strconv"
@@ -92,6 +93,7 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 				//debug parsing issue from the master for replication
 				//SET Message for slave ["bar" "456" "SET" "baz" "789"] *3
 				// response = parser.BULK_NULL_STRING //temp check
+				log.Println("Debug Here...")
 				if len(parsedMessage.Messages) == 5 {
 					m := parsedMessage.Messages
 					s.Set(m[0], m[1])
