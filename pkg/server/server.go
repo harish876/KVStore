@@ -85,7 +85,6 @@ func (s *Server) HandleClient(conn net.Conn, st *store.Store) {
 		buffer := make([]byte, 1024)
 		recievedBytes, err := conn.Read(buffer)
 		if err == io.EOF || recievedBytes == 0 {
-			fmt.Printf("Received IOF Error for %s\n", s.Role)
 			break
 		}
 		fmt.Printf("Recieved Bytes in request: %d\n", recievedBytes)
@@ -299,14 +298,6 @@ func (s *Server) HandleHandShakeWithMaster(wg *sync.WaitGroup) (net.Conn, error)
 	res = data[:d]
 	_ = res
 	//fmt.Printf("Message from Master for RDB Content %s\n", string(res))
-
-	data = make([]byte, 1024)
-	d, err = conn.Read(data)
-	if err != nil {
-		fmt.Println(err)
-	}
-	res = data[:d]
-	fmt.Printf("Message from Master for Connection. %s - %s\n", conn.LocalAddr().String(), string(res))
 
 	wg.Done()
 
