@@ -1,22 +1,17 @@
 package server
 
 import (
-	"crypto/sha512"
-	"encoding/base64"
-	"encoding/hex"
 	"flag"
 	"fmt"
 	"io"
-	"log"
 	"net"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/codecrafters-io/redis-starter-go/pkg/parser"
 	"github.com/codecrafters-io/redis-starter-go/pkg/store"
+	"github.com/codecrafters-io/redis-starter-go/pkg/utils"
 )
 
 var (
@@ -31,7 +26,7 @@ type Server struct {
 	MasterHost        string
 	MasterPort        int
 	Role              string
-	Replicas          ConnectionPool
+	ReplicaPool       ConnectionPool
 	ReplicationId     string
 	ReplicationOffset int
 	ReplicaLock       sync.Mutex
@@ -69,8 +64,8 @@ func NewServer() *Server {
 	}
 	if port == masterPort {
 		server.Role = MASTER_ROLE
-		server.Replicas = NewConnectionPool()
-		server.ReplicationId = GenerateReplicationId()
+		server.ReplicaPool = NewConnectionPool()
+		server.ReplicationId = utils.GenerateReplicationId(DEFAULT_HOST)
 		server.ReplicationOffset = 0
 	} else {
 		server.Role = SLAVE_ROLE
@@ -178,7 +173,7 @@ func (s *Server) HandleClient(conn net.Conn, st *store.Store) {
 			if s.Role == MASTER_ROLE {
 				response = parser.EncodeSimpleString(fmt.Sprintf("FULLRESYNC %s %d", s.ReplicationId, s.ReplicationOffset))
 				s.ReplicaLock.Lock()
-				s.Replicas.Add(conn)
+				s.ReplicaPool.Add(conn)
 				s.ReplicaLock.Unlock()
 			} else {
 				response = parser.BULK_NULL_STRING
@@ -204,155 +199,4 @@ func (s *Server) HandleClient(conn net.Conn, st *store.Store) {
 		}
 		fmt.Printf("Number of Bytes sent : %d\n", sentBytes)
 	}
-}
-
-/* --- Replication Utils ----- */
-func (s *Server) ConnectToMaster() (net.Conn, error) {
-	master := fmt.Sprintf("%s:%d", s.MasterHost, s.MasterPort)
-	conn, err := net.Dial("tcp", master)
-	if err != nil {
-		return nil, err
-	}
-	return conn, nil
-}
-func (s *Server) PingMaster(conn net.Conn) error {
-	_, err := conn.Write([]byte(parser.EncodeRespArray([]string{"PING"})))
-	if err != nil {
-		return fmt.Errorf("error sending PING message to master: %v", err)
-	}
-	return nil
-}
-func (s *Server) SendReplConfMessage(conn net.Conn) error {
-	_, err := conn.Write([]byte(parser.EncodeRespArray([]string{"REPLCONF", "listening-port", fmt.Sprintf("%d", s.ServerPort)})))
-	if err != nil {
-		return fmt.Errorf("error sending REPLCONF listening port message to master: %v", err)
-	}
-	_, err = conn.Write([]byte(parser.EncodeRespArray([]string{"REPLCONF", "capa", "psync2"})))
-	if err != nil {
-		return fmt.Errorf("error sending REPLCONF capa psync2 message to master: %v", err)
-	}
-	return nil
-}
-func (s *Server) SendPsyncMessage(conn net.Conn) error {
-	_, err := conn.Write([]byte(parser.EncodeRespArray([]string{"PSYNC", "?", fmt.Sprintf("%d", -1)})))
-	if err != nil {
-		return fmt.Errorf("error sending PSYNC listening port message to master: %v", err)
-	}
-	return nil
-}
-func (s *Server) HandleHandShakeWithMaster(wg *sync.WaitGroup) (net.Conn, error) {
-	conn, err := s.ConnectToMaster()
-	if err != nil {
-		fmt.Printf("Failed to connect to master %v", err)
-		return nil, err
-	}
-	s.PingMaster(conn)
-	//Ping command read
-	data := make([]byte, 1024)
-	d, err := conn.Read(data)
-	if err != nil {
-		fmt.Println(err)
-	}
-	res := data[:d]
-	_ = res
-	//fmt.Printf("Message from Master Ping %s\n", string(res))
-
-	s.SendReplConfMessage(conn)
-	//Replf Conf Listening Port Message
-	data = make([]byte, 1024)
-	d, err = conn.Read(data)
-	if err != nil {
-		fmt.Println(err)
-	}
-	res = data[:d]
-	_ = res
-	//fmt.Printf("Message from Master Replconf-1 %s\n", string(res))
-
-	//Replf Conf Psync Message
-	data = make([]byte, 1024)
-	d, err = conn.Read(data)
-	if err != nil {
-		fmt.Println(err)
-	}
-	res = data[:d]
-	_ = res
-	//fmt.Printf("Message from Master Replconf-2 %s\n", string(res))
-
-	s.SendPsyncMessage(conn)
-	//Replf Conf Psync Message
-	data = make([]byte, 1024)
-	d, err = conn.Read(data)
-	if err != nil {
-		fmt.Println(err)
-	}
-	res = data[:d]
-	_ = res
-	//fmt.Printf("Message from Master Psync %s\n", string(res))
-
-	//RDB Stuff
-	data = make([]byte, 1024)
-	d, err = conn.Read(data)
-	if err != nil {
-		fmt.Println(err)
-	}
-	res = data[:d]
-	_ = res
-	//fmt.Printf("Message from Master for RDB Content %s\n", string(res))
-
-	wg.Done()
-
-	return conn, nil
-}
-
-/* --- Master Utils --- */
-
-func (s *Server) SendRdbMessage(conn net.Conn) {
-	base64String := "UkVESVMwMDEx+glyZWRpcy12ZXIFNy4yLjD6CnJlZGlzLWJpdHPAQPoFY3RpbWXCbQi8ZfoIdXNlZC1tZW3CsMQQAPoIYW9mLWJhc2XAAP/wbjv+wP9aog=="
-	response, _ := base64.StdEncoding.DecodeString(base64String)
-	stringResponse := string(response)
-	sentBytes, err := conn.Write([]byte(fmt.Sprintf("$%d\r\n%s", len(stringResponse), stringResponse)))
-	if err != nil {
-		fmt.Println("Error writing response: ", err.Error())
-	}
-	fmt.Printf("Sent Byte count of RDB message %d\n", sentBytes)
-}
-func (s *Server) PropagateMessageToReplica(request string) {
-	successfulWrites := 0
-	for {
-		replicaConn, err := s.Replicas.Get()
-		if err != nil {
-			fmt.Println("Error getting connection from pool:", err)
-			break
-		}
-		log.Printf("Propagating Message... %s to server %s ", request, replicaConn.LocalAddr().String())
-		_, err = replicaConn.Write([]byte(request))
-		if err != nil {
-			fmt.Println("Error writing to replica:", err)
-			s.Replicas.Put(replicaConn)
-			break
-		}
-
-		successfulWrites++
-
-		s.Replicas.Put(replicaConn)
-
-		if successfulWrites == len(s.Replicas.Replicas) {
-			break
-		}
-	}
-}
-
-/* --- General Utils. Move to utils folder later ---- */
-func GenerateReplicationId() string {
-	timestamp := time.Now().Unix()
-	machineID, err := os.Hostname()
-	if err != nil {
-		machineID = DEFAULT_HOST
-	}
-	data := fmt.Sprintf("%d%s", timestamp, machineID)
-	hash := sha512.Sum512([]byte(data))
-	hashHex := hex.EncodeToString(hash[:])
-	truncatedHash := hashHex[:40]
-
-	return truncatedHash
 }
