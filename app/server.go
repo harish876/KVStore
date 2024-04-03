@@ -73,7 +73,7 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 			fmt.Printf("Response is %s ", response)
 
 		case "set":
-			fmt.Printf("SET Message for %s %q %d\n", glb.Role, parsedMessage.Messages, parsedMessage.MessagesLength)
+			fmt.Printf("SET Message for %s %q %s\n", glb.Role, parsedMessage.Messages, request)
 			if parsedMessage.MessagesLength == 2 {
 				key := parsedMessage.Messages[0]
 				value := parsedMessage.Messages[1]
