@@ -20,6 +20,8 @@ func (s *Server) SendRdbMessage(conn net.Conn) {
 	fmt.Printf("Sent Byte count of RDB message %d\n", sentBytes)
 }
 func (s *Server) PropagateMessageToReplica(request string, parsedMessage parser.RESPMessage) {
+	s.ReplicaLock.Lock()
+	defer s.ReplicaLock.Unlock()
 	successfulWrites := 0
 	for {
 		log.Println("Propagate Message Request", request)
