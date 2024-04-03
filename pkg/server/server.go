@@ -58,10 +58,10 @@ func NewServer() *Server {
 	}
 
 	var server *Server = &Server{
-		ServerPort: port,
-		MasterPort: masterPort,
-		MasterHost: masterHost,
-		//Lock is present
+		ServerPort:  port,
+		MasterPort:  masterPort,
+		MasterHost:  masterHost,
+		ReplicaLock: sync.Mutex{},
 	}
 	if port == masterPort {
 		server.Role = MASTER_ROLE
