@@ -79,7 +79,6 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 				key := parsedMessage.Messages[0]
 				value := parsedMessage.Messages[1]
 				s.Set(key, value)
-				fmt.Println("Here")
 				s.PrintMap()
 				response = parser.EncodeSimpleString("OK")
 			} else if parsedMessage.MessagesLength == 4 {
@@ -90,7 +89,14 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 				response = parser.EncodeSimpleString("OK")
 
 			} else {
+				//debug parsing issue from the master for replication
+				//SET Message for slave ["bar" "456" "SET" "baz" "789"] *3
 				// response = parser.BULK_NULL_STRING //temp check
+				if len(parsedMessage.Messages) == 5 {
+					m := parsedMessage.Messages
+					s.Set(m[0], m[1])
+					s.Set(m[3], m[4])
+				}
 				response = parser.EncodeSimpleString("OK")
 			}
 			fmt.Printf("\nResponse is %s \n", response)
