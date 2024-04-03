@@ -31,10 +31,11 @@ func main() {
 
 		}
 		wg.Wait()
-		if mConn != nil {
-			fmt.Println("Replica connected to master!...")
-			go handleClient(mConn, store, glbArgs)
-		}
+		_ = mConn
+		// if mConn != nil {
+		// 	fmt.Println("Replica connected to master!...")
+		// 	go handleClient(mConn, store, glbArgs)
+		// }
 	}
 	for {
 		conn, err := listener.Accept()
@@ -89,7 +90,8 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 				response = parser.EncodeSimpleString("OK")
 
 			} else {
-				response = parser.BULK_NULL_STRING
+				// response = parser.BULK_NULL_STRING //temp check
+				response = parser.EncodeSimpleString("OK")
 			}
 			fmt.Printf("\nResponse is %s \n", response)
 
