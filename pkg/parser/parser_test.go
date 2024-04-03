@@ -136,3 +136,12 @@ func TestRdb(t *testing.T) {
 	}
 	fmt.Println(len(response), string(response))
 }
+
+func TestParserEmpty(t *testing.T) {
+	input := []byte("")
+	msg, err := parser.Decode(input)
+	if err != nil {
+		t.Fatalf("Test Expiry %v", err)
+	}
+	fmt.Printf("\nMethod: %s\nMessage: %s\nMessage length: %d\nSegment Length: %d\n", msg.Method, msg.Messages, msg.MessagesLength, msg.SegmentLength)
+}
