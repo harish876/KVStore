@@ -107,7 +107,7 @@ func HandleHandShakeWithMaster(wg *sync.WaitGroup, glb *args.RedisArgs) (net.Con
 		fmt.Println(err)
 	}
 	res = data[:d]
-	fmt.Printf("Message from Master for Connection. %s\n", string(res))
+	fmt.Printf("Message from Master for Connection. %s - %s\n", conn.LocalAddr().String(), string(res))
 
 	wg.Done()
 

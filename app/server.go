@@ -28,7 +28,7 @@ func main() {
 		wg.Add(1)
 		mConn, err := replication.HandleHandShakeWithMaster(&wg, glbArgs)
 		if err != nil {
-			fmt.Printf("FAILED TO CONNECT TO MASTER: %v", err)
+			fmt.Printf("Failed to Connect to master: %v", err)
 
 		}
 		wg.Wait()
