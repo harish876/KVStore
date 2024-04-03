@@ -33,7 +33,7 @@ func main() {
 		wg.Wait()
 		if mConn != nil {
 			fmt.Println("Replica connected to master!...")
-			go handleClient(mConn, store, glbArgs)
+			//go handleClient(mConn, store, glbArgs)
 		}
 	}
 	for {
