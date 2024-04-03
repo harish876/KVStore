@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/codecrafters-io/redis-starter-go/pkg/parser"
 	"github.com/codecrafters-io/redis-starter-go/pkg/store"
@@ -199,7 +198,6 @@ func (s *Server) HandleClient(conn net.Conn, st *store.Store) {
 		if s.Role == MASTER_ROLE && parsedMessage.Method == "set" {
 			//something is wrong here
 			s.PropagateMessageToReplica(request, parsedMessage)
-			time.Sleep(10 * time.Second)
 		}
 		fmt.Printf("Number of Bytes sent : %d\n", sentBytes)
 	}
