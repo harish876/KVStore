@@ -28,7 +28,7 @@ func PropagateMessageToReplica(request string, r *args.ConnectionPool) {
 			fmt.Println("Error getting connection from pool:", err)
 			break
 		}
-		log.Println("Propagating Message...", request)
+		log.Printf("Propagating Message... %s to server %s ", request, replicaConn.LocalAddr().String())
 		_, err = replicaConn.Write([]byte(request))
 		if err != nil {
 			fmt.Println("Error writing to replica:", err)
