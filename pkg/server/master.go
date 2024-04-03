@@ -20,27 +20,20 @@ func (s *Server) SendRdbMessage(conn net.Conn) {
 	fmt.Printf("Sent Byte count of RDB message %d\n", sentBytes)
 }
 func (s *Server) PropagateMessageToReplica(request string, parsedMessage parser.RESPMessage) {
-	successfulWrites := 0
 	s.ReplicaLock.Lock()
 	defer s.ReplicaLock.Unlock()
-	for {
-		log.Println("Propagate Message Request", parsedMessage)
-		replicaConn, err := s.ReplicaPool.Get()
-		if err != nil {
-			fmt.Println("Error getting connection from pool:", err)
-			break
-		}
-		log.Printf("Propagating Message... %s to server %s ", request, replicaConn.LocalAddr().String())
-		_, err = replicaConn.Write([]byte(request))
-		if err != nil {
-			fmt.Println("Error writing to replica:", err)
-			s.ReplicaPool.Put(replicaConn)
-			break
-		}
-		successfulWrites++
-		s.ReplicaPool.Put(replicaConn)
-		if successfulWrites == len(s.ReplicaPool.Replicas) {
-			break
-		}
+	log.Println("Propagate Message Request", parsedMessage)
+	replicaConn, err := s.ReplicaPool.Get()
+	if err != nil {
+		fmt.Println("Error getting connection from pool:", err)
+		return
 	}
+	log.Printf("Propagating Message... %s to server %s ", request, replicaConn.LocalAddr().String())
+	_, err = replicaConn.Write([]byte(request))
+	if err != nil {
+		fmt.Println("Error writing to replica:", err)
+		s.ReplicaPool.Put(replicaConn)
+		return
+	}
+	s.ReplicaPool.Put(replicaConn)
 }
