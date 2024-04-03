@@ -32,10 +32,10 @@ func main() {
 		}
 		wg.Wait()
 		_ = mConn
-		// if mConn != nil {
-		// 	fmt.Println("Replica connected to master!...")
-		// 	go handleClient(mConn, store, glbArgs)
-		// }
+		if mConn != nil {
+			fmt.Println("Replica connected to master!...")
+			go handleClient(mConn, store, glbArgs)
+		}
 	}
 	for {
 		conn, err := listener.Accept()
