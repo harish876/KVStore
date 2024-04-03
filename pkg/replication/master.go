@@ -3,6 +3,7 @@ package replication
 import (
 	"encoding/base64"
 	"fmt"
+	"log"
 	"net"
 
 	"github.com/codecrafters-io/redis-starter-go/pkg/args"
@@ -21,14 +22,13 @@ func SendRdbMessage(conn net.Conn, glb *args.RedisArgs) {
 
 func PropagateMessageToReplica(request string, r *args.ConnectionPool) {
 	successfulWrites := 0
-
 	for {
 		replicaConn, err := r.Get()
 		if err != nil {
 			fmt.Println("Error getting connection from pool:", err)
 			break
 		}
-
+		log.Println("Propagating Message...", request)
 		_, err = replicaConn.Write([]byte(request))
 		if err != nil {
 			fmt.Println("Error writing to replica:", err)
