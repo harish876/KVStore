@@ -121,11 +121,11 @@ func (s *Server) HandleClient(conn net.Conn, st *store.Store) {
 				//SET Message for slave ["bar" "456" "SET" "baz" "789"] *3
 				// response = parser.BULK_NULL_STRING //temp check
 				// log.Println("Debug Here...")
-				// if len(parsedMessage.Messages) == 5 {
-				// 	m := parsedMessage.Messages
-				// 	st.Set(m[0], m[1])
-				// 	st.Set(m[3], m[4])
-				// }
+				if len(parsedMessage.Messages) == 5 {
+					m := parsedMessage.Messages
+					st.Set(m[0], m[1])
+					st.Set(m[3], m[4])
+				}
 				// response = parser.BULK_NULL_STRING
 
 				response = parser.EncodeSimpleString("OK")
