@@ -196,6 +196,7 @@ func (s *Server) HandleClient(conn net.Conn, st *store.Store) {
 			s.SendRdbMessage(conn)
 		}
 		if s.Role == MASTER_ROLE && parsedMessage.Method == "set" {
+			// something wrong here
 			s.PropagateMessageToReplica(request, parsedMessage)
 		}
 		fmt.Printf("Number of Bytes sent : %d\n", sentBytes)
