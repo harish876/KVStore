@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"strconv"
 	"strings"
@@ -115,7 +116,7 @@ func (s *Server) HandleClient(conn net.Conn, st *store.Store) {
 				//debug parsing issue from the master for replication
 				//SET Message for slave ["bar" "456" "SET" "baz" "789"] *3
 				// response = parser.BULK_NULL_STRING //temp check
-				// log.Println("Debug Here...")
+				log.Println("Debug Here...")
 				if len(parsedMessage.Messages) == 5 {
 					m := parsedMessage.Messages
 					st.Set(m[0], m[1])
@@ -195,6 +196,8 @@ func (s *Server) HandleClient(conn net.Conn, st *store.Store) {
 			s.SendRdbMessage(conn)
 		}
 		if s.Role == MASTER_ROLE && parsedMessage.Method == "set" {
+			log.Println("Raw Message: ", request)
+			log.Println("Parsed Message", parsedMessage.Messages)
 			s.PropagateMessageToReplica(request)
 		}
 		fmt.Printf("Number of Bytes sent : %d\n", sentBytes)

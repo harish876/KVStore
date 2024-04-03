@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net"
+
+	"github.com/codecrafters-io/redis-starter-go/pkg/parser"
 )
 
 func (s *Server) SendRdbMessage(conn net.Conn) {
@@ -17,7 +19,7 @@ func (s *Server) SendRdbMessage(conn net.Conn) {
 	}
 	fmt.Printf("Sent Byte count of RDB message %d\n", sentBytes)
 }
-func (s *Server) PropagateMessageToReplica(request string) {
+func (s *Server) PropagateMessageToReplica(request string, parsedMessage parser.RESPMessage) {
 	successfulWrites := 0
 	for {
 		log.Println("Propagate Message Request", request)
