@@ -20,7 +20,7 @@ func (s *Server) SendRdbMessage(conn net.Conn) {
 func (s *Server) PropagateMessageToReplica(request string) {
 	successfulWrites := 0
 	for {
-		log.Println("Request", request)
+		log.Println("Propagate Message Request", request)
 		replicaConn, err := s.ReplicaPool.Get()
 		if err != nil {
 			fmt.Println("Error getting connection from pool:", err)
