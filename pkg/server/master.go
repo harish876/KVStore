@@ -24,7 +24,7 @@ func (s *Server) PropagateMessageToReplica(request string, parsedMessage parser.
 	s.ReplicaLock.Lock()
 	defer s.ReplicaLock.Unlock()
 	for {
-		log.Println("Propagate Message Request", request)
+		log.Println("Propagate Message Request", request, parsedMessage)
 		replicaConn, err := s.ReplicaPool.Get()
 		if err != nil {
 			fmt.Println("Error getting connection from pool:", err)
