@@ -21,6 +21,7 @@ func (s *Server) SendRdbMessage(conn net.Conn) {
 }
 func (s *Server) PropagateMessageToReplica(request string, parsedMessage parser.RESPMessage) {
 	successfulWrites := 0
+	//
 	s.ReplicaLock.Lock()
 	defer s.ReplicaLock.Unlock()
 	for {
