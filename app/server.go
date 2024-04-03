@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/codecrafters-io/redis-starter-go/pkg/args"
 	"github.com/codecrafters-io/redis-starter-go/pkg/parser"
@@ -150,6 +151,7 @@ func handleClient(conn net.Conn, s *store.Store, glb *args.RedisArgs) {
 				response = parser.EncodeSimpleString(fmt.Sprintf("FULLRESYNC %s %d", glb.ReplicationConfig.ReplicationId, glb.ReplicationConfig.ReplicationOffset))
 				// glb.ReplicationConfig.Replicas = append(glb.ReplicationConfig.Replicas, args.Replicas{Conn: conn})
 				glb.ReplicationConfig.Replicas.Add(conn)
+				time.Sleep(1 * time.Minute)
 			} else {
 				response = parser.BULK_NULL_STRING
 			}
