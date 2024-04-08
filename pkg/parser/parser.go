@@ -15,7 +15,7 @@ type RESPMessage struct {
 	Method         string
 	Messages       []string
 	MessagesLength int
-	SegmentLength  int //Number of segments - rename it later
+	SegmentLength  int
 }
 
 // TODO: Improve parser logic
@@ -77,16 +77,10 @@ func Decode(msg []byte) (RESPMessage, error) {
 }
 
 /* Only works for array of length 1*/
-func EncodeRespString(messages []string) string {
-	if len(messages) > 0 {
-		var result string
-		for _, msg := range messages {
-			result += fmt.Sprintf("$%d\r\n%s\r\n", len(msg), msg)
-		}
-		return result
-	} else {
-		return BULK_NULL_STRING
-	}
+func EncodeRespString(msg string) string {
+	var result string
+	result += fmt.Sprintf("$%d\r\n%s\r\n", len(msg), msg)
+	return result
 }
 
 func EncodeRespArray(messages []string) string {

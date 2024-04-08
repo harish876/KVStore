@@ -69,23 +69,17 @@ func TestParserSetExpiry(t *testing.T) {
 
 func TestParserInfo(t *testing.T) {
 	requestMessage := []string{"info", "replication"}
-	responseMessage := parser.EncodeRespString([]string{
-		parser.GetLablelledMessage("role", "master"),
-		parser.GetLablelledMessage("master_replid", "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb"),
-		parser.GetLablelledMessage("master_repl_offset", 0),
-	})
 	input := parser.EncodeRespArray(requestMessage)
 	msg, err := parser.Decode([]byte(input))
 	if err != nil {
 		t.Fatal(err)
 	}
 	fmt.Printf("\nMethod: %s\nMessage: %s\nMessage length: %d\nSegment Length: %d\n", msg.Method, msg.Messages, msg.MessagesLength, msg.SegmentLength)
-	fmt.Printf("\nResponse Message is: %s", responseMessage)
 }
 
 func TestReplOffset(t *testing.T) {
 	var patternMatchError error
-	responseValue := parser.EncodeRespString([]string{fmt.Sprintf("role:%s\r\nmaster_replid:%s\r\nmaster_repl_offset:%d", "master", "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb", 0)})
+	responseValue := parser.EncodeRespString(fmt.Sprintf("role:%s\r\nmaster_replid:%s\r\nmaster_repl_offset:%d", "master", "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb", 0))
 	if regexp.MustCompile("master_replid:([a-zA-Z0-9]+)").Match([]byte(responseValue)) {
 		fmt.Printf("Found master_replid:xxx in response.")
 	} else {

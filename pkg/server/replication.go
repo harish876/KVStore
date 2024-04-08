@@ -3,7 +3,6 @@ package server
 import (
 	"fmt"
 	"net"
-	"sync"
 
 	"github.com/codecrafters-io/redis-starter-go/pkg/parser"
 )
@@ -41,7 +40,7 @@ func (s *Server) SendPsyncMessage(conn net.Conn) error {
 	}
 	return nil
 }
-func (s *Server) HandleHandShakeWithMaster(wg *sync.WaitGroup) (net.Conn, error) {
+func (s *Server) HandleHandShakeWithMaster() (net.Conn, error) {
 	conn, err := s.ConnectToMaster()
 	if err != nil {
 		fmt.Printf("Failed to connect to master %v", err)
@@ -94,8 +93,6 @@ func (s *Server) HandleHandShakeWithMaster(wg *sync.WaitGroup) (net.Conn, error)
 	}
 	res = data[:d]
 	_ = res
-
-	wg.Done()
 
 	return conn, nil
 }
