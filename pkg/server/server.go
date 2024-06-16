@@ -84,10 +84,8 @@ func (s *Server) HandleClient(conn net.Conn, st *store.Store) {
 			break
 		}
 		request := string(buffer[:recievedBytes])
-		if request == "" {
-			log.Println("Incoming request: ", request)
-		}
 		parsedMessage, _ := parser.Decode(buffer[:recievedBytes])
+		log.Println("Parsed Message: ", parsedMessage)
 
 		var response string
 		switch parsedMessage.Method {
@@ -99,20 +97,57 @@ func (s *Server) HandleClient(conn net.Conn, st *store.Store) {
 			response = parser.EncodeRespString(parsedMessage.Messages[0])
 
 		case "set":
-			if parsedMessage.MessagesLength == 2 {
-				key := parsedMessage.Messages[0]
-				value := parsedMessage.Messages[1]
-				st.Set(key, value)
-				response = parser.EncodeSimpleString("OK")
-			} else if parsedMessage.MessagesLength == 4 {
-				key := parsedMessage.Messages[0]
-				value := parsedMessage.Messages[1]
-				ttl, _ := strconv.Atoi(parsedMessage.Messages[3])
-				st.SetWithTTL(key, value, ttl)
-				response = parser.EncodeSimpleString("OK")
-			} else {
-				response = parser.BULK_NULL_STRING
+			messages := make([]string, 0)
+			messages = append(messages, "SET")
+			messages = append(messages, parsedMessage.Messages...)
+
+			//["SET","foo","bar","baz","456","px","100"]
+
+			tmp := make([]string, 0)
+			for idx := 0; idx < len(messages); idx++ {
+				if messages[idx] == "SET" {
+					//only contains key and pair value
+					log.Println("TMP", tmp)
+					if len(tmp) == 2 {
+						key := tmp[0]
+						value := tmp[1]
+						log.Printf("Setting key: %s, value: %s", key, value)
+						st.Set(key, value)
+					} else if len(tmp) == 4 {
+						key := tmp[0]
+						value := tmp[1]
+						ttlString := tmp[3]
+						ttl, err := strconv.Atoi(ttlString)
+						if err != nil {
+							log.Println("Error converting ttl string to int: ", err)
+							st.Set(key, value)
+						}
+						log.Printf("Setting key: %s, value: %s ttl: %d", key, value, ttl)
+						st.SetWithTTL(key, value, ttl)
+					}
+					tmp = make([]string, 0)
+				} else {
+					tmp = append(tmp, messages[idx])
+				}
 			}
+			if len(tmp) == 2 {
+				key := tmp[0]
+				value := tmp[1]
+				log.Printf("Setting key: %s, value: %s", key, value)
+				st.Set(key, value)
+			} else if len(tmp) == 4 {
+				key := tmp[0]
+				value := tmp[1]
+				ttlString := tmp[3]
+				ttl, err := strconv.Atoi(ttlString)
+				if err != nil {
+					log.Println("Error converting ttl string to int: ", err)
+					st.Set(key, value)
+				}
+				log.Printf("Setting key: %s, value: %s ttl: %d", key, value, ttl)
+				st.SetWithTTL(key, value, ttl)
+			}
+			response = parser.EncodeSimpleString("OK")
 
 		case "get":
 			if parsedMessage.MessagesLength >= 1 {
@@ -143,7 +178,11 @@ func (s *Server) HandleClient(conn net.Conn, st *store.Store) {
 			if s.Role == MASTER_ROLE {
 				response = parser.EncodeSimpleString("OK")
 			} else {
-				response = parser.BULK_NULL_STRING
+				if parsedMessage.MessagesLength == 2 && strings.ToLower(parsedMessage.Messages[0]) == "getack" {
+					response = parser.EncodeRespArray([]string{"REPLCONF", "ACK", "0"})
+				} else {
+					response = parser.BULK_NULL_STRING
+				}
 			}
 
 		case "psync":

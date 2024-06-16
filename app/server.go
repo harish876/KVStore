@@ -19,12 +19,8 @@ func main() {
 		os.Exit(1)
 	}
 	if s.Role == server.SLAVE_ROLE {
-		mConn, err := s.HandleHandShakeWithMaster()
-		if err != nil {
+		if err := s.HandleHandShakeWithMaster(store); err != nil {
 			fmt.Printf("Failed to Connect to master: %v", err)
-		}
-		if mConn != nil {
-			s.HandleClient(mConn, store)
 		}
 	}
 	for {

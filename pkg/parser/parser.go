@@ -33,6 +33,10 @@ func Decode(msg []byte) (RESPMessage, error) {
 			if len(segLenArray) != 2 {
 				return parsedRespMessage, fmt.Errorf("error parsing segment. segment length not provided")
 			}
+			if segLenArray[0] == "" && segLenArray[1] == "" {
+				parsedArray = append(parsedArray, v)
+				continue
+			}
 			length, err := strconv.Atoi(segLenArray[1])
 			if err != nil {
 				return parsedRespMessage, fmt.Errorf("error parsing segment length: %v", err)

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/codecrafters-io/redis-starter-go/pkg/parser"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestParserEcho(t *testing.T) {
@@ -138,4 +139,20 @@ func TestParserEmpty(t *testing.T) {
 		t.Fatalf("Test Expiry %v", err)
 	}
 	fmt.Printf("\nMethod: %s\nMessage: %s\nMessage length: %d\nSegment Length: %d\n", msg.Method, msg.Messages, msg.MessagesLength, msg.SegmentLength)
+}
+
+func TestGetAck(t *testing.T) {
+	input := []byte("*3\r\n$8\r\nreplconf\r\n$6\r\ngetack\r\n$1\r\n*\r\n")
+	msg, err := parser.Decode(input)
+	if err != nil {
+		t.Fatalf("Replconf get ack parsing failed %v", err)
+	}
+	assert.Equal(t, msg.Method, "replconf")
+	response := parser.EncodeRespArray([]string{"REPLCONF", "ACK", "0"})
+	assert.Equal(t, response, "*3\r\n$8\r\nREPLCONF\r\n$3\r\nACK\r\n$1\r\n0\r\n")
+	assert.ElementsMatch(t, msg.Messages, []string{"getack", "*"})
+}
+
+func TestSetMessage(t *testing.T) {
+
 }
