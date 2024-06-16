@@ -101,8 +101,6 @@ func (s *Server) HandleClient(conn net.Conn, st *store.Store) {
 			messages = append(messages, "SET")
 			messages = append(messages, parsedMessage.Messages...)
 
-			//["SET","foo","bar","baz","456","px","100"]
-
 			tmp := make([]string, 0)
 			for idx := 0; idx < len(messages); idx++ {
 				if messages[idx] == "SET" {
