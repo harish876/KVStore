@@ -111,7 +111,7 @@ func (s *Server) HandleCommand(message []string) (string, bool) {
 		response = parser.EncodeRespString(message[1])
 
 	case "wait":
-		response = parser.EncodeInt(0)
+		response = parser.EncodeInt(7)
 
 	case "set":
 		if len(message) == 3 {
@@ -165,12 +165,8 @@ func (s *Server) HandleCommand(message []string) (string, bool) {
 		}
 
 	case "psync":
-		if s.Config.Role == MASTER_ROLE {
-			response = parser.EncodeSimpleString(fmt.Sprintf("FULLRESYNC %s %d", s.Config.ReplicationId, s.ReplicationOffset))
-			resync = true
-		} else {
-			response = parser.BULK_NULL_STRING
-		}
+		response = parser.EncodeSimpleString(fmt.Sprintf("FULLRESYNC %s %d", s.Config.ReplicationId, s.ReplicationOffset))
+		resync = true
 
 	default:
 		response = "-ERR unknown command\r\n"
