@@ -111,7 +111,7 @@ func (s *Server) HandleCommand(message []string) (string, bool) {
 		response = parser.EncodeRespString(message[1])
 
 	case "wait":
-		response = parser.EncodeInt(7)
+		response = parser.EncodeInt(len(s.ReplicaPool.Replicas))
 
 	case "set":
 		if len(message) == 3 {
