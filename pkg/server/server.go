@@ -110,6 +110,9 @@ func (s *Server) HandleCommand(message []string) (string, bool) {
 	case "echo":
 		response = parser.EncodeRespString(message[1])
 
+	case "wait":
+		response = parser.EncodeInt(0)
+
 	case "set":
 		if len(message) == 3 {
 			key, value := message[1], message[2]

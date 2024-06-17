@@ -121,6 +121,12 @@ func EncodeSingleMessage(messages []string) string {
 	return ""
 }
 
+// Supports only +ve numbers for now
+// :[<+|->]<value>\r\n
+func EncodeInt(val int) string {
+	return fmt.Sprintf(":%d\r\n", val)
+}
+
 func DecodeV1(reader *bufio.Reader) (arr []string, bytesRead int, err error) {
 	var arrSize, strSize int
 	for {
@@ -129,10 +135,8 @@ func DecodeV1(reader *bufio.Reader) (arr []string, bytesRead int, err error) {
 		if err != nil {
 			return
 		}
-		// HACK: should count bytes properly?
 		bytesRead += len(token)
 		token = strings.TrimRight(token, "\r\n")
-		// TODO: do proper RESP parsing!!!
 		switch {
 		case arrSize == 0 && token[0] == '*':
 			arrSize, err = strconv.Atoi(token[1:])
