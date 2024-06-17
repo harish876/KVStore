@@ -6,25 +6,37 @@ import (
 	"sync"
 )
 
+type Replica struct {
+	Conn   net.Conn
+	Offset int
+}
+
+func FromConn(conn net.Conn) *Replica {
+	return &Replica{
+		Conn:   conn,
+		Offset: 0,
+	}
+}
+
 type ConnectionPool struct {
-	Replicas []net.Conn
+	Replicas []*Replica
 	mutex    sync.Mutex
 }
 
 func NewConnectionPool() ConnectionPool {
 	return ConnectionPool{
-		Replicas: make([]net.Conn, 0),
+		Replicas: make([]*Replica, 0),
 	}
 }
 
-func (cp *ConnectionPool) Add(conn net.Conn) {
+func (cp *ConnectionPool) Add(replica *Replica) {
 	cp.mutex.Lock()
 	defer cp.mutex.Unlock()
-	cp.Replicas = append(cp.Replicas, conn)
+	cp.Replicas = append(cp.Replicas, replica)
 }
 
 // Function to get a connection from the pool
-func (cp *ConnectionPool) Get() (net.Conn, error) {
+func (cp *ConnectionPool) Get() (*Replica, error) {
 	cp.mutex.Lock()
 	defer cp.mutex.Unlock()
 	if len(cp.Replicas) == 0 {
@@ -36,8 +48,8 @@ func (cp *ConnectionPool) Get() (net.Conn, error) {
 }
 
 // Function to return a connection to the pool
-func (cp *ConnectionPool) Put(conn net.Conn) {
+func (cp *ConnectionPool) Put(replica *Replica) {
 	cp.mutex.Lock()
 	defer cp.mutex.Unlock()
-	cp.Replicas = append(cp.Replicas, conn)
+	cp.Replicas = append(cp.Replicas, replica)
 }

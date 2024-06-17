@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/codecrafters-io/redis-starter-go/pkg/parser"
 	"github.com/codecrafters-io/redis-starter-go/pkg/store"
@@ -111,7 +112,9 @@ func (s *Server) HandleCommand(message []string) (string, bool) {
 		response = parser.EncodeRespString(message[1])
 
 	case "wait":
-		response = parser.EncodeInt(len(s.ReplicaPool.Replicas))
+		count, _ := strconv.Atoi(message[1])
+		timeout, _ := strconv.Atoi(message[2])
+		response = s.HandleWait(count, timeout)
 
 	case "set":
 		if len(message) == 3 {
@@ -153,9 +156,11 @@ func (s *Server) HandleCommand(message []string) (string, bool) {
 		subCommand := strings.ToLower(message[1])
 		switch subCommand {
 		case "getack":
+			//master sends this to replica
 			response = parser.EncodeRespArray([]string{"REPLCONF", "ACK", strconv.Itoa(s.ReplicationOffset)})
-			log.Printf("Replconf Response: %v", response)
+			log.Printf("Master sent me a getack request, responding with Response: %v", response)
 		case "ack":
+			log.Printf("Acks recieved: %v", response)
 			s.AcksRecieved <- true
 			response = ""
 		default:
@@ -205,9 +210,49 @@ func (s *Server) ServeClient(clientId int, conn net.Conn) error {
 		if resync {
 			s.SendRdbMessage(conn)
 			s.ReplicaLock.Lock()
-			s.ReplicaPool.Add(conn)
+			s.ReplicaPool.Add(FromConn(conn))
 			s.ReplicaLock.Unlock()
 		}
 	}
 	return nil
+}
+
+func (s *Server) HandleWait(count, timeout int) string {
+	acks := 0
+	ackCmd := parser.EncodeRespArray([]string{"REPLCONF", "GETACK", "*"})
+
+	for idx := 0; idx < len(s.ReplicaPool.Replicas); idx++ {
+		currReplica := s.ReplicaPool.Replicas[idx]
+		if currReplica.Offset > 0 {
+			currReplica.Conn.Write([]byte(ackCmd))
+			go func(conn net.Conn) {
+				log.Println("waiting response from replica", conn.RemoteAddr().String())
+				buffer := make([]byte, 1024)
+				n, err := conn.Read(buffer)
+				if err != nil {
+					log.Println("unable to read ack response from the replica", err)
+				}
+				log.Println("Response from the replica", string(buffer[:n]))
+				s.AcksRecieved <- true
+
+			}(currReplica.Conn)
+		} else {
+			acks++
+		}
+	}
+	timer := time.After(time.Duration(timeout) * time.Millisecond)
+
+outer:
+	for acks < count {
+		select {
+		case <-s.AcksRecieved:
+			acks++
+		case <-timer:
+			log.Println("timeout exceeded during wait")
+			break outer
+		}
+	}
+
+	return parser.EncodeInt(acks)
+
 }

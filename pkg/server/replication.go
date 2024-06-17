@@ -93,6 +93,8 @@ func (s *Server) HandleHandShakeWithMaster() {
 	// this should be a persisten connection I guess here
 	go s.ServeReplicas(reader, masterConn)
 }
+
+// This is where the replicas recieve messages from the master and the "replicas" respond to the master
 func (s *Server) ServeReplicas(reader *bufio.Reader, masterConn net.Conn) error {
 	defer masterConn.Close()
 	for {
