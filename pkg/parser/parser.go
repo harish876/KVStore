@@ -1,7 +1,9 @@
 package parser
 
 import (
+	"bufio"
 	"fmt"
+	"log"
 	"reflect"
 	"strconv"
 	"strings"
@@ -117,4 +119,43 @@ func GetLablelledMessage(label string, value any) string {
 // TODO: Implement this later to have a nice message builder
 func EncodeSingleMessage(messages []string) string {
 	return ""
+}
+
+func DecodeV1(reader *bufio.Reader) (arr []string, bytesRead int, err error) {
+	var arrSize, strSize int
+	for {
+		var token string
+		token, err = reader.ReadString('\n')
+		if err != nil {
+			return
+		}
+		// HACK: should count bytes properly?
+		bytesRead += len(token)
+		token = strings.TrimRight(token, "\r\n")
+		// TODO: do proper RESP parsing!!!
+		switch {
+		case arrSize == 0 && token[0] == '*':
+			arrSize, err = strconv.Atoi(token[1:])
+			if err != nil {
+				return
+			}
+		case strSize == 0 && token[0] == '$':
+			strSize, err = strconv.Atoi(token[1:])
+			if err != nil {
+				return
+			}
+		default:
+			if len(token) != strSize {
+				log.Printf("[from master] Wrong string size - got: %d, want: %d\n", len(token), strSize)
+				break
+			}
+			arrSize--
+			strSize = 0
+			arr = append(arr, token)
+		}
+		if arrSize == 0 {
+			break
+		}
+	}
+	return
 }

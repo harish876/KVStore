@@ -1,11 +1,13 @@
 package server
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"io"
 	"log"
 	"net"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -22,191 +24,191 @@ var (
 	SLAVE_ROLE   = "slave"
 )
 
+type ServerConfig struct {
+	Port          int
+	Role          string
+	ReplicationId string
+	ReplicaofHost string
+	ReplicaofPort int
+	Dir           string
+	Dbfilename    string
+}
+
 type Server struct {
-	ServerPort        int
-	MasterHost        string
-	MasterPort        int
-	Role              string
+	Store             *store.Store
+	Config            ServerConfig
 	ReplicaPool       ConnectionPool
-	ReplicationId     string
 	ReplicationOffset int
+	AcksRecieved      chan bool
 	ReplicaLock       sync.Mutex
 }
 
 func NewServer() *Server {
-	currentPortPtr := flag.Int("port", DEFAULT_PORT, "Current Redis Server Port")
-	masterServerDetailsPtr := flag.String("replicaof", "localhost 6379", "Current Redis Server Port")
+	var config ServerConfig
+	flag.IntVar(&config.Port, "port", DEFAULT_PORT, "listen on specified port")
+	flag.StringVar(&config.ReplicaofHost, "replicaof", "", "start server in replica mode of given host and port")
+	//yet to be completed
+	flag.StringVar(&config.Dir, "dir", "", "directory where RDB files are stored")
+	flag.StringVar(&config.Dbfilename, "dbfilename", "", "name of the RDB file")
 	flag.Parse()
-	port := *currentPortPtr
-	masterServerDetails := *masterServerDetailsPtr
-	var masterDetails = strings.Split(masterServerDetails, " ")
 
-	var masterHost string
-	var masterPort int
+	log.Println(config.ReplicaofHost)
 
-	if len(masterDetails) < 2 {
-		masterHost = DEFAULT_HOST
-		masterPort = DEFAULT_PORT
+	if len(config.ReplicaofHost) == 0 {
+		config.Role = MASTER_ROLE
+		config.ReplicationId = utils.GenerateReplicationId(DEFAULT_HOST)
 	} else {
-		parsedMasterPort, err := strconv.Atoi(masterDetails[1])
-		if err != nil {
-			masterPort = DEFAULT_PORT
-		} else {
-			masterPort = parsedMasterPort
+		config.ReplicaofHost = strings.Split(config.ReplicaofHost, " ")[0]
+		config.Role = SLAVE_ROLE
+		switch flag.NArg() {
+		case 0:
+			config.ReplicaofPort = 6379
+		case 1:
+			config.ReplicaofPort, _ = strconv.Atoi(flag.Arg(0))
+		default:
+			flag.Usage()
 		}
-		masterHost = masterDetails[0]
 	}
 
-	var server *Server = &Server{
-		ServerPort:  port,
-		MasterPort:  masterPort,
-		MasterHost:  masterHost,
-		ReplicaLock: sync.Mutex{},
+	return &Server{
+		Store:        store.New(),
+		Config:       config,
+		AcksRecieved: make(chan bool),
+		ReplicaLock:  sync.Mutex{},
 	}
-	if port == masterPort {
-		server.Role = MASTER_ROLE
-		server.ReplicaPool = NewConnectionPool()
-		server.ReplicationId = utils.GenerateReplicationId(DEFAULT_HOST)
-		server.ReplicationOffset = 0
-	} else {
-		server.Role = SLAVE_ROLE
-	}
-
-	return server
 }
 
-func (s *Server) HandleClient(conn net.Conn, st *store.Store) {
-	defer conn.Close()
-	for {
-		buffer := make([]byte, 1024)
-		recievedBytes, err := conn.Read(buffer)
-		if err == io.EOF || recievedBytes == 0 {
+func (s *Server) Start() {
+	if s.Config.Role == SLAVE_ROLE {
+		s.HandleHandShakeWithMaster()
+	}
+
+	listener, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", s.Config.Port))
+	if err != nil {
+		fmt.Printf("Failed to bind to port %d\n", s.Config.Port)
+		os.Exit(1)
+	}
+	for clientId := 1; ; clientId++ {
+		conn, err := listener.Accept()
+		if err != nil {
+			fmt.Println("Error accepting connection: ", err.Error())
 			break
 		}
-		request := string(buffer[:recievedBytes])
-		parsedMessage, _ := parser.Decode(buffer[:recievedBytes])
-		log.Println("Parsed Message: ", parsedMessage)
+		go s.ServeClient(clientId, conn)
+	}
+	os.Exit(1)
+}
 
-		var response string
-		switch parsedMessage.Method {
+func (s *Server) HandleCommand(message []string) (string, bool) {
+	var response string
+	var resync bool
 
-		case "ping":
-			response = parser.EncodeSimpleString("PONG")
+	switch strings.ToLower(message[0]) {
+	case "ping":
+		response = parser.EncodeSimpleString("PONG")
 
-		case "echo":
-			response = parser.EncodeRespString(parsedMessage.Messages[0])
+	case "echo":
+		response = parser.EncodeRespString(message[1])
 
-		case "set":
-			messages := make([]string, 0)
-			messages = append(messages, "SET")
-			messages = append(messages, parsedMessage.Messages...)
+	case "set":
+		if len(message) == 3 {
+			key, value := message[1], message[2]
+			s.Store.Set(key, value)
+			log.Printf("Set Key %s - Value %s: ", key, value)
+		} else if len(message) == 5 && strings.ToLower(message[3]) == "px" {
+			key, value, ttlString := message[1], message[2], message[4]
+			ttl, _ := strconv.Atoi(ttlString)
+			s.Store.SetWithTTL(key, value, ttl)
+			log.Printf("Set Key %s - Value %s: ", key, value)
+		}
+		s.PropagateMessageToReplicaV1(message)
+		response = parser.EncodeSimpleString("OK")
 
-			tmp := make([]string, 0)
-			for idx := 0; idx < len(messages); idx++ {
-				if messages[idx] == "SET" {
-					//only contains key and pair value
-					log.Println("TMP", tmp)
-					if len(tmp) == 2 {
-						key := tmp[0]
-						value := tmp[1]
-						log.Printf("Setting key: %s, value: %s", key, value)
-						st.Set(key, value)
-					} else if len(tmp) == 4 {
-						key := tmp[0]
-						value := tmp[1]
-						ttlString := tmp[3]
-						ttl, err := strconv.Atoi(ttlString)
-						if err != nil {
-							log.Println("Error converting ttl string to int: ", err)
-							st.Set(key, value)
-						}
-						log.Printf("Setting key: %s, value: %s ttl: %d", key, value, ttl)
-						st.SetWithTTL(key, value, ttl)
-					}
-					tmp = make([]string, 0)
-				} else {
-					tmp = append(tmp, messages[idx])
-				}
+	case "get":
+		if len(message) >= 1 {
+			key := message[1]
+			if value, ok := s.Store.Get(key); !ok {
+				log.Println("Value not found for key: ", key)
+				response = parser.BULK_NULL_STRING
+			} else {
+				response = parser.EncodeRespString(value)
 			}
-			if len(tmp) == 2 {
-				key := tmp[0]
-				value := tmp[1]
-				log.Printf("Setting key: %s, value: %s", key, value)
-				st.Set(key, value)
-			} else if len(tmp) == 4 {
-				key := tmp[0]
-				value := tmp[1]
-				ttlString := tmp[3]
-				ttl, err := strconv.Atoi(ttlString)
-				if err != nil {
-					log.Println("Error converting ttl string to int: ", err)
-					st.Set(key, value)
-				}
-				log.Printf("Setting key: %s, value: %s ttl: %d", key, value, ttl)
-				st.SetWithTTL(key, value, ttl)
-			}
+		} else {
+			response = parser.BULK_NULL_STRING
+		}
+
+	case "info":
+		if len(message) >= 1 && strings.ToLower(message[1]) == "replication" {
+			var infoParams []string
+			infoParams = append(infoParams, fmt.Sprintf("role:%s\r\nmaster_replid:%s\r\nmaster_repl_offset:%d", s.Config.Role, s.Config.ReplicationId, s.ReplicationOffset))
+			response = parser.EncodeRespString(infoParams[0])
+		} else {
+			response = parser.BULK_NULL_STRING
+		}
+
+	case "replconf":
+		subCommand := strings.ToLower(message[1])
+		switch subCommand {
+		case "getack":
+			response = parser.EncodeRespArray([]string{"REPLCONF", "ACK", strconv.Itoa(s.ReplicationOffset)})
+			log.Printf("Replconf Response: %v", response)
+		case "ack":
+			s.AcksRecieved <- true
+			response = ""
+		default:
+			//revisit
 			response = parser.EncodeSimpleString("OK")
 
-		case "get":
-			if parsedMessage.MessagesLength >= 1 {
-				key := parsedMessage.Messages[0]
-				if value, ok := st.Get(key); !ok {
-					response = parser.BULK_NULL_STRING
-				} else {
-					response = parser.EncodeRespString(value)
-				}
-			} else {
-				response = parser.BULK_NULL_STRING
-			}
-
-		case "info":
-			if parsedMessage.MessagesLength >= 1 && parsedMessage.Messages[0] == "replication" {
-				var infoParams []string
-				if s.Role == MASTER_ROLE {
-					infoParams = append(infoParams, fmt.Sprintf("role:%s\r\nmaster_replid:%s\r\nmaster_repl_offset:%d", s.Role, s.ReplicationId, s.ReplicationOffset))
-				} else {
-					infoParams = append(infoParams, parser.GetLablelledMessage("role", SLAVE_ROLE))
-				}
-				response = parser.EncodeRespString(infoParams[0])
-			} else {
-				response = parser.BULK_NULL_STRING
-			}
-
-		case "replconf":
-			if s.Role == MASTER_ROLE {
-				response = parser.EncodeSimpleString("OK")
-			} else {
-				if parsedMessage.MessagesLength == 2 && strings.ToLower(parsedMessage.Messages[0]) == "getack" {
-					response = parser.EncodeRespArray([]string{"REPLCONF", "ACK", "0"})
-				} else {
-					response = parser.BULK_NULL_STRING
-				}
-			}
-
-		case "psync":
-			if s.Role == MASTER_ROLE {
-				response = parser.EncodeSimpleString(fmt.Sprintf("FULLRESYNC %s %d", s.ReplicationId, s.ReplicationOffset))
-				s.ReplicaLock.Lock()
-				s.ReplicaPool.Add(conn)
-				s.ReplicaLock.Unlock()
-			} else {
-				response = parser.BULK_NULL_STRING
-			}
-
-		default:
-			response = "-ERR unknown command\r\n"
 		}
 
-		_, err = conn.Write([]byte(response))
+	case "psync":
+		if s.Config.Role == MASTER_ROLE {
+			response = parser.EncodeSimpleString(fmt.Sprintf("FULLRESYNC %s %d", s.Config.ReplicationId, s.ReplicationOffset))
+			resync = true
+		} else {
+			response = parser.BULK_NULL_STRING
+		}
+
+	default:
+		response = "-ERR unknown command\r\n"
+	}
+
+	return response, resync
+}
+
+func (s *Server) ServeClient(clientId int, conn net.Conn) error {
+	defer conn.Close()
+	reader := bufio.NewReader(conn)
+	for {
+		message, recievedBytes, err := parser.DecodeV1(reader)
 		if err != nil {
-			fmt.Println("Error writing response: ", err.Error())
+			if err == io.EOF || recievedBytes == 0 {
+				break
+			} else {
+				log.Printf("Error parsing request: %v ", err.Error())
+				return err
+			}
+		}
+
+		if len(message) == 0 {
 			break
 		}
-		if s.Role == MASTER_ROLE && parsedMessage.Method == "psync" {
-			s.SendRdbMessage(conn)
+
+		log.Println("Parsed Message: ", message)
+		response, resync := s.HandleCommand(message)
+		n, err := conn.Write([]byte(response))
+		if err != nil {
+			fmt.Println("Error writing response: ", err.Error())
+			return err
 		}
-		if s.Role == MASTER_ROLE && parsedMessage.Method == "set" {
-			s.PropagateMessageToReplica(request, parsedMessage)
+		log.Printf("Sent Bytes to clientId %d - response %s\n", n, response)
+
+		if resync {
+			s.SendRdbMessage(conn)
+			s.ReplicaLock.Lock()
+			s.ReplicaPool.Add(conn)
+			s.ReplicaLock.Unlock()
 		}
 	}
+	return nil
 }

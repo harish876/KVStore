@@ -1,6 +1,8 @@
 package parser_test
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/base64"
 	"fmt"
 	"regexp"
@@ -151,8 +153,11 @@ func TestGetAck(t *testing.T) {
 	response := parser.EncodeRespArray([]string{"REPLCONF", "ACK", "0"})
 	assert.Equal(t, response, "*3\r\n$8\r\nREPLCONF\r\n$3\r\nACK\r\n$1\r\n0\r\n")
 	assert.ElementsMatch(t, msg.Messages, []string{"getack", "*"})
-}
 
-func TestSetMessage(t *testing.T) {
-
+	reader := bufio.NewReader(bytes.NewReader(input))
+	arr, bytesRead, err := parser.DecodeV1(reader)
+	if err != nil {
+		t.Fail()
+	}
+	fmt.Println(arr, bytesRead)
 }
